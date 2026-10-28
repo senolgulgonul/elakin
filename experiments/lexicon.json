@@ -1,0 +1,17 @@
+{
+  "_note": "Every word uses only e, l, a, k, i, n (and capitals). Tags decide which words a sentence pattern may combine.",
+  "names": ["Ela", "Ali", "Lale", "Nil", "Kenan", "Nalan", "Kaan"],
+  "family": ["anne", "nine"],
+  "take": ["kek", "lale", "nane", "kil", "elek", "kalkan", "kekik", "ekin"],
+  "plant": ["lale", "nane", "kekik", "ekin"],
+  "spice": ["nane", "kekik"],
+  "animal": ["inek", "keklik"],
+  "place": { "alan": "alana", "kanal": "kanala" },
+  "intransitive": ["kalk", "ilikle", "anla"],
+  "made_with": [["kek", "nane"], ["kek", "kekik"], ["kale", "kil"], ["ekin", "elek"], ["alan", "lale"], ["alan", "ekin"], ["kanal", "kil"]],
+  "described": [["lale", "ak"], ["lale", "ala"], ["kek", "naneli"], ["kek", "kekikli"], ["alan", "enli"], ["alan", "laleli"], ["kanal", "enli"], ["elek", "ak"], ["kalkan", "ak"], ["ekin", "ak"]],
+  "possessive": { "anne": "annenin", "nine": "ninenin", "Lale": "Lalenin" },
+  "owned": [["eli", "ak"], ["keki", "naneli"], ["keki", "kekikli"]],
+  "syllables": ["la le li", "ka ke ki", "na ne ni", "al el il", "ak ek ik", "an en in", "lak lek lik", "kal kel kil", "nal nel nil"],
+  "titles": ["KEK", "LALE", "NANE", "ALAN", "KANAL", "ELEK", "İNEK", "KEKLİK", "AİLE", "EL ELE", "KALE", "EKİN"]
+}

@@ -1,0 +1,10 @@
+condition,chars,sentences,unique_sentences,words,unique_words,avg_sentence_chars,distinct_chars,char_bigram_entropy_bits
+A_repetition,2995,168,30,575,55,16.6,18,5.69
+B_variety,2993,161,161,582,61,17.4,18,5.63
+C_balanced,2979,161,72,581,61,17.3,18,5.72
+D_same_person,3000,161,72,584,61,17.4,18,5.71
+C_short,2680,144,72,522,61,17.4,18,5.72
+E_titles,2833,144,72,553,74,17.4,18,5.92
+F_syllables,2968,144,72,609,80,17.4,18,5.80
+G1_length1500,1491,87,36,289,56,15.9,18,5.69
+G3_length6000,5980,330,143,1172,60,16.9,18,5.62

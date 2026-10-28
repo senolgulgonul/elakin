@@ -41,7 +41,9 @@ Everything runs in the browser and your text is never uploaded. The page loads o
 
 ## About the Turkish sample
 
-The Turkish sample text was written for this page. It follows the letter order of Turkish sound-based early reading instruction, where the first group of letters is E, L, A, K, İ, N, and uses only those letters, with short, repetitive sentences.
+The Turkish sample text uses only E, L, A, K, İ, N, the first letter group of Turkish sound-based early reading instruction. It is generated from a small grammar of such sentences, and every sentence appears only once. We chose it by experiment: of nine kinds of text of the same length, each trained five times, this one taught the model best on sentences it had never seen. Code, texts and results are in [`experiments/`](experiments/).
+
+Why no repetition? The `experiments/` folder trains the same model on nine kinds of text, five times each, and measures it on sentences it has never seen. With the length held fixed, the less a text repeats its sentences, the better the model handles new ones: a text where each sentence appears once reached a test loss of 0.71, one that repeats 30 sentences about five times each reached 1.82. The default text is that winning condition (`experiments/texts/B_variety.txt`). Details and all results are in `experiments/`.
 
 ## License
 
@@ -55,4 +57,4 @@ Elakin, büyük dil modellerinin nasıl çalıştığını, içine bakılabilece
 
 ---
 
-Elakin v1.1 · Şenol Gülgönül · MIT License
+Elakin v1.2 · Şenol Gülgönül · MIT License

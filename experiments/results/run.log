@@ -1,0 +1,65 @@
+A_repetition seed 1 96s
+A_repetition seed 2 96s
+A_repetition seed 3 95s
+A_repetition seed 4 93s
+A_repetition seed 5 94s
+B_variety seed 1 93s
+B_variety seed 2 96s
+B_variety seed 3 93s
+B_variety seed 4 95s
+B_variety seed 5 93s
+C_balanced seed 1 95s
+C_balanced seed 2 90s
+C_balanced seed 3 92s
+C_balanced seed 4 94s
+C_balanced seed 5 96s
+D_same_person seed 1 96s
+D_same_person seed 2 92s
+D_same_person seed 3 90s
+D_same_person seed 4 96s
+D_same_person seed 5 101s
+skip A_repetition 1
+skip A_repetition 2
+skip A_repetition 3
+skip A_repetition 4
+skip A_repetition 5
+skip B_variety 1
+skip B_variety 2
+skip B_variety 3
+skip B_variety 4
+skip B_variety 5
+skip C_balanced 1
+skip C_balanced 2
+skip C_balanced 3
+skip C_balanced 4
+skip C_balanced 5
+skip D_same_person 1
+skip D_same_person 2
+skip D_same_person 3
+skip D_same_person 4
+skip D_same_person 5
+C_short seed 1 96s
+C_short seed 2 95s
+C_short seed 3 94s
+C_short seed 4 98s
+C_short seed 5 97s
+E_titles seed 1 95s
+E_titles seed 2 95s
+E_titles seed 3 96s
+E_titles seed 4 96s
+E_titles seed 5 89s
+F_syllables seed 1 95s
+F_syllables seed 2 96s
+F_syllables seed 3 95s
+F_syllables seed 4 95s
+F_syllables seed 5 94s
+G1_length1500 seed 1 95s
+G1_length1500 seed 2 96s
+G1_length1500 seed 3 98s
+G1_length1500 seed 4 95s
+G1_length1500 seed 5 94s
+G3_length6000 seed 1 93s
+G3_length6000 seed 2 97s
+G3_length6000 seed 3 95s
+G3_length6000 seed 4 98s
+G3_length6000 seed 5 92s
