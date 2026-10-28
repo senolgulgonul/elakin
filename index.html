@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Elakin · train a tiny language model in your browser</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EEF1F5; --surface:#FFFFFF; --ink:#16213A; --muted:#5B6880; --line:#D3DAE4;
+  --mark:#FFD84D; --mark-ink:#16213A; --accent:#2B4FD6;
+  --teal-rgb:24 132 126; --rose-rgb:208 74 104;
+  --chip-l:72%; --chip-a:.55;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  --sans:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0E131B; --surface:#161D28; --ink:#E3E8F0; --muted:#94A1B6; --line:#2A3446;
+    --mark:#E8C33A; --mark-ink:#10151E; --accent:#8EA6FF;
+    --teal-rgb:64 200 190; --rose-rgb:240 112 140;
+    --chip-l:45%; --chip-a:.6;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0E131B; --surface:#161D28; --ink:#E3E8F0; --muted:#94A1B6; --line:#2A3446;
+  --mark:#E8C33A; --mark-ink:#10151E; --accent:#8EA6FF;
+  --teal-rgb:64 200 190; --rose-rgb:240 112 140;
+  --chip-l:45%; --chip-a:.6;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 16px);scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.55;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+
+.layout{display:grid;grid-template-columns:220px minmax(0,1fr);gap:48px;max-width:1120px;margin:0 auto;padding:0 24px}
+.rail{position:sticky;top:env(safe-area-inset-top,0px);align-self:start;padding:40px 0;height:100vh;max-height:100vh}
+.rail h2{font-size:15px;font-weight:600;margin:0 0 18px;letter-spacing:-.01em}
+.rail ol{list-style:none;margin:0;padding:0;position:relative}
+.rail ol::before{content:"";position:absolute;left:11px;top:12px;bottom:12px;width:2px;background:var(--line)}
+.rail li a{display:flex;align-items:center;gap:12px;padding:7px 0;text-decoration:none;color:var(--muted);font-size:15px;position:relative}
+.rail li a span.n{flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:600;background:var(--paper);border:2px solid var(--line);color:var(--muted)}
+.rail li a.on{color:var(--ink);font-weight:600}
+.rail li a.on span.n{background:var(--mark);border-color:var(--mark);color:var(--mark-ink)}
+.rail li a.done span.n{border-color:var(--ink);color:var(--ink)}
+.rail .note{margin-top:24px;font-size:13px;color:var(--muted)}
+
+main{padding:40px 0 120px;max-width:760px}
+header.hero{padding:8px 0 40px}
+header.hero h1{font-size:clamp(34px,5vw,52px);line-height:1.05;letter-spacing:-.03em;font-weight:700;margin:0 0 16px}
+header.hero p{font-size:19px;color:var(--muted);margin:0;max-width:56ch}
+.ribbon{margin-top:28px;font-family:var(--mono);font-size:15px;line-height:2.1;word-break:break-all}
+
+section.step{padding:44px 0 8px;border-top:1px solid var(--line)}
+section.step > h2{display:flex;align-items:baseline;gap:14px;font-size:28px;letter-spacing:-.02em;margin:0 0 10px;line-height:1.15}
+section.step > h2 .n{font-size:15px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums}
+.lede{color:var(--muted);margin:0 0 22px;max-width:62ch}
+p{max-width:64ch}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;margin:16px 0}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.spacer{flex:1}
+button,.btn{font:inherit;font-size:15px;font-weight:600;padding:9px 16px;border-radius:999px;border:1.5px solid var(--ink);background:transparent;color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+button.primary{background:var(--ink);color:var(--paper)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:hover:not(:disabled){background:var(--ink);color:var(--paper)}
+input[type=file]{display:none}
+textarea,input[type=text],select{font:inherit;color:var(--ink);background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;width:100%}
+textarea{font-family:var(--mono);font-size:14px;line-height:1.6;min-height:190px;resize:vertical}
+textarea.drag{border-color:var(--accent);border-style:dashed}
+input[type=text]{font-family:var(--mono);font-size:15px}
+label.check{display:inline-flex;gap:8px;align-items:center;font-size:15px;cursor:pointer}
+.stats{display:flex;flex-wrap:wrap;gap:8px 28px;font-size:15px;color:var(--muted);margin-top:14px}
+.stats b{color:var(--ink);font-variant-numeric:tabular-nums;font-weight:600}
+.msg{font-size:15px;color:var(--muted)}
+.warn{color:rgb(var(--rose-rgb))}
+
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:16px;overflow-x:auto}
+.tabs button{border:none;border-radius:0;padding:10px 12px;background:none;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.tabs button:hover:not(:disabled){background:none;color:var(--ink)}
+.tabs button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--mark)}
+.seg{display:inline-flex;border:1.5px solid var(--line);border-radius:999px;padding:3px;gap:2px}
+.seg button{border:none;padding:6px 12px;font-size:14px}
+.seg button[aria-pressed=true]{background:var(--ink);color:var(--paper)}
+
+.chips{font-family:var(--mono);font-size:15px;line-height:2.3}
+.chip{display:inline;padding:3px 1px;border-radius:4px;white-space:pre;box-decoration-break:clone;-webkit-box-decoration-break:clone;margin-right:2px}
+.chip .sp{opacity:.45}
+.cmp{width:100%;border-collapse:collapse;font-size:15px;margin-top:6px}
+.cmp td,.cmp th{padding:8px 6px;text-align:left;border-bottom:1px solid var(--line)}
+.cmp th{font-weight:600;color:var(--muted);font-size:13px}
+.cmp td.num{text-align:right;font-variant-numeric:tabular-nums}
+.bar{height:8px;border-radius:4px;background:var(--mark);display:block}
+
+.vocab{display:grid;grid-template-columns:repeat(auto-fill,minmax(68px,1fr));gap:6px}
+.vocab div{border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-family:var(--mono);font-size:13px;display:flex;justify-content:space-between;align-items:baseline;gap:6px;position:relative;overflow:hidden}
+.vocab div b{font-size:16px;font-weight:600;white-space:pre}
+.vocab div i{font-style:normal;color:var(--muted);font-size:12px}
+.vocab div span{position:absolute;left:0;bottom:0;height:3px;background:var(--mark)}
+.ids{font-family:var(--mono);font-size:14px;display:flex;flex-wrap:wrap;gap:6px}
+.ids span{display:inline-flex;flex-direction:column;align-items:center;border:1px solid var(--line);border-radius:6px;padding:2px 6px;min-width:30px}
+.ids span small{color:var(--muted);font-size:12px}
+
+.scroll{overflow-x:auto;padding-bottom:4px}
+.heat{display:grid;gap:1px;font-family:var(--mono);font-size:12px;width:max-content}
+.heat .c{width:var(--cw,14px);height:var(--ch,14px);border-radius:2px}
+.heat .lab{color:var(--muted);display:flex;align-items:center;justify-content:center;white-space:pre;min-width:16px}
+.heat .rl{justify-content:flex-end;padding-right:6px}
+.att .c{cursor:pointer}
+.att .row-on{outline:2px solid var(--ink);outline-offset:-1px}
+.legend{display:flex;gap:16px;font-size:13px;color:var(--muted);margin-top:10px;align-items:center;flex-wrap:wrap}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-2px;margin-right:5px}
+.formula{font-family:var(--mono);font-size:15px;background:var(--paper);border-radius:8px;padding:10px 14px;display:inline-block;margin:4px 0 8px}
+.explain{font-size:15px;margin-top:14px;min-height:3em}
+.explain .k{font-family:var(--mono);background:var(--mark);color:var(--mark-ink);padding:0 4px;border-radius:3px;white-space:pre}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin:14px 0}
+.kpis div{font-size:13px;color:var(--muted)}
+.kpis b{display:block;font-size:24px;color:var(--ink);font-variant-numeric:tabular-nums;font-weight:600;letter-spacing:-.02em}
+canvas.chart{width:100%;height:240px;display:block}
+.samples{font-family:var(--mono);font-size:13.5px;line-height:1.55;margin:0;padding:0;list-style:none}
+.samples li{padding:10px 0;border-top:1px solid var(--line);white-space:pre-wrap;word-break:break-word}
+.samples li small{display:block;font-family:var(--sans);color:var(--muted);font-size:12.5px;margin-bottom:2px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.two h3,.panel h3{font-size:15px;margin:0 0 10px;font-weight:600}
+.offs{display:flex;align-items:flex-end;gap:6px;height:120px;margin-top:8px}
+.offs div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;font-size:12px;color:var(--muted);font-family:var(--mono)}
+.offs div span{width:100%;background:rgb(var(--teal-rgb));border-radius:3px 3px 0 0;min-height:1px}
+.gen{font-family:var(--mono);font-size:15px;line-height:1.65;white-space:pre-wrap;word-break:break-word;min-height:5em}
+.gen .p{background:var(--mark);color:var(--mark-ink);border-radius:3px}
+.probs{display:grid;grid-template-columns:auto 1fr auto;gap:5px 10px;align-items:center;font-size:14px}
+.probs b{font-family:var(--mono);white-space:pre;font-weight:600}
+.probs i{font-style:normal;color:var(--muted);font-variant-numeric:tabular-nums;text-align:right}
+input[type=range]{width:100%;accent-color:var(--ink)}
+.ctl{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;font-size:15px}
+.merges{font-family:var(--mono);font-size:13px;display:flex;flex-wrap:wrap;gap:6px;max-height:150px;overflow:auto;margin-top:10px}
+.merges span{border:1px solid var(--line);border-radius:6px;padding:2px 6px;white-space:pre}
+.merges span.last{background:var(--mark);color:var(--mark-ink);border-color:var(--mark)}
+
+.fab{position:fixed;right:20px;bottom:calc(20px + env(safe-area-inset-bottom,0px));width:52px;height:52px;padding:0;justify-content:center;border-radius:50%;background:var(--surface);box-shadow:0 4px 16px rgb(0 0 0 / .15);z-index:20}
+.toast{position:fixed;right:84px;bottom:calc(32px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--paper);font-size:14px;padding:6px 12px;border-radius:8px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20}
+.toast.on{opacity:1}
+.copyinline{width:40px;height:40px;padding:0;justify-content:center;border-radius:50%;border-color:var(--line)}
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);width:min(640px,92vw);padding:20px}
+dialog::backdrop{background:rgb(0 0 0 / .4)}
+dialog textarea{min-height:300px;font-size:12px}
+.ids span.unk{border-color:rgb(var(--rose-rgb));color:rgb(var(--rose-rgb))}
+.chip.unk{outline:2px solid rgb(var(--rose-rgb))}
+.brand{display:flex;align-items:baseline;gap:10px;margin-bottom:22px}
+.brand b{font-size:22px;letter-spacing:-.02em}
+.brand span{font-family:var(--mono);font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 8px}
+footer.foot{border-top:1px solid var(--line);margin-top:56px;padding:24px 0 40px;font-size:14px;color:var(--muted)}
+footer.foot p{margin:0 0 6px}
+@media (max-width:860px){
+  .layout{grid-template-columns:minmax(0,1fr);gap:0;padding:0 18px}
+  .rail{position:sticky;top:env(safe-area-inset-top,0px);height:auto;max-height:none;padding:10px 0 10px 18px;background:var(--paper);z-index:5;border-bottom:1px solid var(--line);margin:0 -18px}
+  .rail h2,.rail .note{display:none}
+  .rail ol{display:flex;gap:16px;overflow-x:auto;scrollbar-width:none}
+  .rail ol::before{display:none}
+  .rail li a{white-space:nowrap;font-size:14px;gap:6px}
+  .rail li a span.n{width:20px;height:20px;font-size:11px}
+  main{padding-top:24px}
+  .two{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="rail" aria-label="Steps">
+  <h2>Elakin <span style="font-family:var(--mono);font-size:12px;color:var(--muted);font-weight:400">v1.0</span></h2>
+  <ol id="railList">
+    <li><a href="#s-text"><span class="n">1</span>Your text</a></li>
+    <li><a href="#s-tokens"><span class="n">2</span>Tokens</a></li>
+    <li><a href="#s-vocab"><span class="n">3</span>Vocabulary</a></li>
+    <li><a href="#s-embed"><span class="n">4</span>Embeddings</a></li>
+    <li><a href="#s-attn"><span class="n">5</span>Attention</a></li>
+    <li><a href="#s-train"><span class="n">6</span>Training</a></li>
+    <li><a href="#s-learned"><span class="n">7</span>What it learned</a></li>
+    <li><a href="#s-gen"><span class="n">8</span>Generate</a></li>
+  </ol>
+  <p class="note">Everything runs in your browser. Your text never leaves this page.</p>
+</nav>
+
+<main>
+<header class="hero">
+  <div class="brand"><b>Elakin</b><span>v1.0</span><span class="spacer" style="border:0;flex:1"></span><button class="copyinline" aria-label="Copy all results as text, to paste into an AI chat" title="Copy all results as text, to paste into an AI chat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div>
+  <h1>Train a tiny language model on your own text, and watch every step.</h1>
+  <p>Large language models are built from the same pieces you’ll see here: tokens, embeddings, attention and a training loop that nudges millions of numbers. This one has <span id="heroParams">about twelve thousand</span> of them, small enough to look at.</p>
+  <p style="font-size:16px;margin-top:12px">The name comes from <span style="font-family:var(--mono)">e, l, a, k, i, n</span>: the first six letters Turkish children learn to read. The Turkish sample text uses only those letters.</p>
+  <div class="ribbon chips" id="ribbon" aria-hidden="true"></div>
+</header>
+
+<section class="step" id="s-text">
+  <h2><span class="n">1</span>Your text</h2>
+  <p class="lede">The model will learn only from what you give it. A few pages of plain text in any language is plenty; more text gives better results but trains more slowly. The last 10% is kept aside to test the model on text it hasn’t seen.</p>
+  <textarea id="txt" spellcheck="false" placeholder="Paste text here, or drop a .txt file on this box."></textarea>
+  <div class="row" style="margin-top:12px">
+    <label class="btn" for="file" tabindex="0" id="fileBtn">Load a .txt file</label>
+    <input type="file" id="file" accept=".txt,.md,text/plain">
+    <button id="sampleTr">Turkish primer (e l a k i n)</button>
+    <button id="sampleEn">English story</button>
+    <span class="spacer"></span>
+    <label class="check"><input type="checkbox" id="lower" autocomplete="off"> Lowercase everything</label>
+  </div>
+  <div class="stats" id="textStats"></div>
+  <p class="msg" id="textMsg"></p>
+</section>
+
+<section class="step" id="s-tokens">
+  <h2><span class="n">2</span>Tokens</h2>
+  <p class="lede">A model can’t read letters. First the text is cut into pieces called tokens. Different models cut differently, and the choice matters: fewer, bigger tokens let a model see more text at once.</p>
+  <label for="focus" class="msg">Text to inspect. Steps 3 to 7 use its first 24 characters.</label>
+  <input type="text" id="focus" style="margin:6px 0 16px">
+  <div class="panel">
+    <div class="tabs" role="tablist" id="tokTabs">
+      <button role="tab" aria-selected="true" data-t="char">Characters (this model)</button>
+      <button role="tab" aria-selected="false" data-t="bpe">BPE trained on your text</button>
+      <button role="tab" aria-selected="false" data-t="gpt2">GPT-2</button>
+      <button role="tab" aria-selected="false" data-t="gpt4">GPT-4</button>
+      <button role="tab" aria-selected="false" data-t="gpt4o">GPT-4o</button>
+    </div>
+    <div id="tokBody"></div>
+  </div>
+  <div class="panel">
+    <h3>The whole text, cut five ways</h3>
+    <table class="cmp" id="tokCmp"></table>
+    <p class="msg" style="margin:10px 0 0">The GPT-2 tokenizer here uses the same vocabulary as Hugging Face’s <code>gpt2</code> tokenizer. Rare words and other languages break into many small pieces.</p>
+  </div>
+</section>
+
+<section class="step" id="s-vocab">
+  <h2><span class="n">3</span>Vocabulary</h2>
+  <p class="lede">Our model uses the simplest tokenizer: one token per character. Every distinct character gets an ID number, and the text becomes a long list of numbers.</p>
+  <div class="panel">
+    <h3 id="vocabTitle">Vocabulary</h3>
+    <div class="vocab" id="vocab"></div>
+  </div>
+  <div class="panel">
+    <h3>Your sentence as numbers</h3>
+    <div class="ids" id="ids"></div>
+  </div>
+</section>
+
+<section class="step" id="s-embed">
+  <h2><span class="n">4</span>Embeddings</h2>
+  <p class="lede">An ID is just a label, so each one is swapped for a row of 32 numbers called an embedding. A second row says where the token sits in the sentence. The two are added together. Before training these numbers are random; training gives them meaning.</p>
+  <div class="panel">
+    <div class="row" style="margin-bottom:14px">
+      <div class="seg" id="embSeg">
+        <button aria-pressed="true" data-v="tok">Token</button>
+        <button aria-pressed="false" data-v="pos">Position</button>
+        <button aria-pressed="false" data-v="sum">Token + position</button>
+      </div>
+    </div>
+    <div class="scroll"><div class="heat" id="embHeat"></div></div>
+    <div class="legend"><span><i style="background:rgb(var(--rose-rgb))"></i>negative</span><span><i style="background:rgb(var(--teal-rgb))"></i>positive</span><span>Each row is one character. The 32 columns are the 32 numbers of its embedding, not positions in the sentence.</span></div>
+  </div>
+</section>
+
+<section class="step" id="s-attn">
+  <h2><span class="n">5</span>Attention</h2>
+  <p class="lede">Attention lets each character gather information from the characters before it. Every position makes a query (what am I looking for?), a key (what do I contain?) and a value (what do I pass on?). Queries are compared with keys to decide how much of each value to take.</p>
+  <div class="formula">weights = softmax( Q · Kᵀ / √32 ), with future positions hidden</div>
+  <div class="panel">
+    <div class="row" style="margin-bottom:14px">
+      <div class="seg" id="attSeg">
+        <button aria-pressed="false" data-v="raw">1. Scores</button>
+        <button aria-pressed="false" data-v="mask">2. Hide the future</button>
+        <button aria-pressed="true" data-v="soft">3. Softmax weights</button>
+      </div>
+      <span class="spacer"></span><span class="msg" id="attStep"></span>
+    </div>
+    <div class="scroll"><div class="heat att" id="attHeat"></div></div>
+    <div class="legend" id="attLegend"></div>
+    <div class="explain" id="attExplain"></div>
+  </div>
+  <p>Rows are the character doing the looking; columns are the characters it can look at. Choose a row to see what that position pays attention to and what it predicts comes next. <span id="attNote">Right now the model is untrained, so the pattern is noise. Come back after step 6.</span></p>
+</section>
+
+<section class="step" id="s-train">
+  <h2><span class="n">6</span>Training</h2>
+  <p class="lede">Training shows the model random 32-character windows of your text. At every position it guesses the next character. The loss measures how surprised it was by the right answer. After each batch, every number in the model moves a little in the direction that would have made the loss smaller.</p>
+  <div class="panel">
+    <div class="row">
+      <button class="primary" id="trainBtn">Start training</button>
+      <button id="resetBtn">Reset model</button>
+      <span class="spacer"></span>
+      <label class="msg" for="lr">Learning rate</label>
+      <select id="lr" style="width:auto"><option value="0.001">0.001</option><option value="0.003" selected>0.003</option><option value="0.01">0.01</option></select>
+    </div>
+    <div class="kpis">
+      <div><b id="kStep">0</b>steps</div>
+      <div><b id="kLoss">–</b>training loss</div>
+      <div><b id="kVal">–</b>held-out loss</div>
+      <div><b id="kSeen">0</b>characters seen</div>
+      <div><b id="kParams">–</b>parameters</div>
+    </div>
+    <p class="msg" id="trainMsg" style="margin:0 0 8px">Training pauses by itself at 500, 1,000 and 2,000 steps so you can look around. If the held-out loss starts rising while the training loss keeps falling, the model is memorising rather than learning.</p>
+    <canvas class="chart" id="chart" aria-label="Loss over training steps"></canvas>
+    <div class="legend"><span><i style="background:var(--ink)"></i>training loss</span><span><i style="background:rgb(var(--rose-rgb))"></i>held-out loss (last 10% of the text)</span><span><i style="background:var(--mark)"></i>random guessing</span><span id="unigramLeg"><i style="background:rgb(var(--teal-rgb))"></i>knowing letter frequencies only</span></div>
+  </div>
+  <div class="panel">
+    <h3>What the model writes as it learns</h3>
+    <ul class="samples" id="samples"><li><small>Start training to see samples.</small></li></ul>
+  </div>
+</section>
+
+<section class="step" id="s-learned">
+  <h2><span class="n">7</span>What attention learned</h2>
+  <p class="lede">The same sentence, before and after training. Look for structure: a bright diagonal just left of the main one means “look at the previous character”, which is how the model learns that <span style="font-family:var(--mono)">q</span> is followed by <span style="font-family:var(--mono)">u</span>.</p>
+  <div class="two">
+    <div class="panel"><h3>Before training</h3><div class="scroll"><div class="heat" id="heatBefore"></div></div></div>
+    <div class="panel"><h3 id="nowTitle">Now</h3><div class="scroll"><div class="heat" id="heatNow"></div></div></div>
+  </div>
+  <div class="panel">
+    <h3>How far back does it look?</h3>
+    <p class="msg" style="margin:0">Average attention weight by distance, measured over many windows of your text.</p>
+    <div class="two">
+      <div><div class="offs" id="offBefore"></div><p class="msg" style="text-align:center;margin:6px 0 0">Before</p></div>
+      <div><div class="offs" id="offNow"></div><p class="msg" style="text-align:center;margin:6px 0 0">Now</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="step" id="s-gen">
+  <h2><span class="n">8</span>Generate</h2>
+  <p class="lede">To write, the model predicts odds for the next character, picks one, adds it to the text and repeats. Temperature reshapes the odds: low is safe and repetitive, high is surprising and messy.</p>
+  <div class="panel">
+    <label class="msg" for="prompt">Start the text with</label>
+    <input type="text" id="prompt" style="margin:6px 0 14px">
+    <div class="ctl"><label for="temp">Temperature</label><input type="range" id="temp" min="0.1" max="2" step="0.05" value="0.8"><b id="tempV" style="font-variant-numeric:tabular-nums">0.80</b></div>
+    <div class="row" style="margin-top:14px"><button class="primary" id="genBtn">Generate 300 characters</button><span class="spacer"></span><button class="copyinline" aria-label="Copy all results as text, to paste into an AI chat" title="Copy all results as text, to paste into an AI chat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div>
+    <div class="gen" id="genOut" style="margin-top:16px"></div>
+  </div>
+  <div class="panel">
+    <h3 id="probTitle">Odds for the next character</h3>
+    <div class="probs" id="probs"></div>
+  </div>
+</section>
+<footer class="foot">
+  <p><b>Elakin</b> v1.0 · by Şenol Gülgönül · <a href="https://github.com/senolgulgonul/elakin">Source on GitHub</a> · MIT License</p>
+  <p>The Turkish sample text was written for this page, following the letter order of Turkish sound-based reading instruction. Everything runs in your browser; your text is never uploaded.</p>
+</footer>
+</main>
+</div>
+<button id="copyBtn" class="fab" aria-label="Copy all results as text, to paste into an AI chat" title="Copy all results as text, to paste into an AI chat">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+</button>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<dialog id="copyDlg"><p style="margin:0 0 10px">Your browser blocked copying. Select all of this text and copy it yourself:</p><textarea id="copyTxt" readonly></textarea><div class="row" style="margin-top:10px;justify-content:flex-end"><button id="copyClose">Close</button></div></dialog>
+<script>
+// TinyGPT: one-block, single-head, character-level transformer with manual backprop.
+(function (root) {
+  function randn(rng) {
+    let u = 0, v = 0;
+    while (u === 0) u = rng();
+    while (v === 0) v = rng();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  }
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  // C[n x m] = A[n x k] * B[k x m]   (row-major)
+  function mm(A, B, n, k, m, C) {
+    C = C || new Float32Array(n * m);
+    C.fill(0);
+    for (let i = 0; i < n; i++) {
+      const ci = i * m, ai = i * k;
+      for (let p = 0; p < k; p++) {
+        const a = A[ai + p]; if (a === 0) continue;
+        const bp = p * m;
+        for (let j = 0; j < m; j++) C[ci + j] += a * B[bp + j];
+      }
+    }
+    return C;
+  }
+  // G[k x m] += A^T[k x n] * D[n x m]
+  function mmTA(A, D, n, k, m, G) {
+    for (let i = 0; i < n; i++) {
+      const ai = i * k, di = i * m;
+      for (let p = 0; p < k; p++) {
+        const a = A[ai + p]; if (a === 0) continue;
+        const gp = p * m;
+        for (let j = 0; j < m; j++) G[gp + j] += a * D[di + j];
+      }
+    }
+  }
+  // C[n x k] = D[n x m] * B^T  where B is [k x m]
+  function mmTB(D, B, n, m, k, C) {
+    C = C || new Float32Array(n * k);
+    for (let i = 0; i < n; i++) {
+      const di = i * m, ci = i * k;
+      for (let p = 0; p < k; p++) {
+        const bp = p * m; let s = 0;
+        for (let j = 0; j < m; j++) s += D[di + j] * B[bp + j];
+        C[ci + p] = s;
+      }
+    }
+    return C;
+  }
+
+  function TinyGPT(cfg) {
+    this.V = cfg.V; this.T = cfg.T; this.d = cfg.d; this.f = cfg.f;
+    const rng = mulberry32(cfg.seed || 42);
+    const V = this.V, T = this.T, d = this.d, f = this.f;
+    const init = (n, s) => { const a = new Float32Array(n); for (let i = 0; i < n; i++) a[i] = randn(rng) * s; return a; };
+    this.p = {
+      E: init(V * d, 0.5), P: init(T * d, 0.2),
+      Wq: init(d * d, 1 / Math.sqrt(d)), Wk: init(d * d, 1 / Math.sqrt(d)),
+      Wv: init(d * d, 1 / Math.sqrt(d)), Wo: init(d * d, 0.5 / Math.sqrt(d)),
+      W1: init(d * f, 1 / Math.sqrt(d)), b1: new Float32Array(f),
+      W2: init(f * d, 0.5 / Math.sqrt(f)), b2: new Float32Array(d),
+      Wu: init(d * V, 1 / Math.sqrt(d)), bu: new Float32Array(V)
+    };
+    this.g = {}; this.m = {}; this.v = {};
+    for (const k in this.p) {
+      const n = this.p[k].length;
+      this.g[k] = new Float32Array(n); this.m[k] = new Float32Array(n); this.v[k] = new Float32Array(n);
+    }
+    this.t = 0;
+  }
+
+  TinyGPT.prototype.forward = function (x) {
+    const n = x.length, d = this.d, f = this.f, V = this.V, p = this.p;
+    const X = new Float32Array(n * d);
+    for (let i = 0; i < n; i++) for (let j = 0; j < d; j++) X[i * d + j] = p.E[x[i] * d + j] + p.P[i * d + j];
+    const Q = mm(X, p.Wq, n, d, d), K = mm(X, p.Wk, n, d, d), Vv = mm(X, p.Wv, n, d, d);
+    const sc = 1 / Math.sqrt(d);
+    const S = mmTB(Q, K, n, d, n); // n x n raw scores
+    for (let i = 0; i < n * n; i++) S[i] *= sc;
+    const A = new Float32Array(n * n);
+    for (let i = 0; i < n; i++) {
+      let mx = -Infinity;
+      for (let j = 0; j <= i; j++) mx = Math.max(mx, S[i * n + j]);
+      let sum = 0;
+      for (let j = 0; j <= i; j++) { const e = Math.exp(S[i * n + j] - mx); A[i * n + j] = e; sum += e; }
+      for (let j = 0; j <= i; j++) A[i * n + j] /= sum;
+    }
+    const Z = mm(A, Vv, n, n, d);
+    const H1 = mm(Z, p.Wo, n, d, d);
+    for (let i = 0; i < n * d; i++) H1[i] += X[i];
+    const U = mm(H1, p.W1, n, d, f);
+    const R = new Float32Array(n * f);
+    for (let i = 0; i < n; i++) for (let j = 0; j < f; j++) { const u = U[i * f + j] + p.b1[j]; U[i * f + j] = u; R[i * f + j] = u > 0 ? u : 0; }
+    const H2 = mm(R, p.W2, n, f, d);
+    for (let i = 0; i < n; i++) for (let j = 0; j < d; j++) H2[i * d + j] += H1[i * d + j] + p.b2[j];
+    const L = mm(H2, p.Wu, n, d, V);
+    for (let i = 0; i < n; i++) for (let j = 0; j < V; j++) L[i * V + j] += p.bu[j];
+    return { n, x, X, Q, K, Vv, S, A, Z, H1, U, R, H2, L };
+  };
+
+  // returns loss; accumulates grads scaled by `scale`
+  TinyGPT.prototype.backward = function (c, y, scale) {
+    const n = c.n, d = this.d, f = this.f, V = this.V, p = this.p, g = this.g;
+    const dL = new Float32Array(n * V);
+    let loss = 0;
+    for (let i = 0; i < n; i++) {
+      let mx = -Infinity;
+      for (let j = 0; j < V; j++) mx = Math.max(mx, c.L[i * V + j]);
+      let s = 0;
+      for (let j = 0; j < V; j++) { const e = Math.exp(c.L[i * V + j] - mx); dL[i * V + j] = e; s += e; }
+      for (let j = 0; j < V; j++) dL[i * V + j] /= s;
+      loss += -Math.log(dL[i * V + y[i]] + 1e-12);
+      dL[i * V + y[i]] -= 1;
+      for (let j = 0; j < V; j++) dL[i * V + j] *= scale;
+    }
+    mmTA(c.H2, dL, n, d, V, g.Wu);
+    for (let i = 0; i < n; i++) for (let j = 0; j < V; j++) g.bu[j] += dL[i * V + j];
+    const dH2 = mmTB(dL, p.Wu, n, V, d);
+    const dH1 = Float32Array.from(dH2);
+    mmTA(c.R, dH2, n, f, d, g.W2);
+    for (let i = 0; i < n; i++) for (let j = 0; j < d; j++) g.b2[j] += dH2[i * d + j];
+    const dU = mmTB(dH2, p.W2, n, d, f);
+    for (let i = 0; i < n * f; i++) if (c.U[i] <= 0) dU[i] = 0;
+    mmTA(c.H1, dU, n, d, f, g.W1);
+    for (let i = 0; i < n; i++) for (let j = 0; j < f; j++) g.b1[j] += dU[i * f + j];
+    const t1 = mmTB(dU, p.W1, n, f, d);
+    for (let i = 0; i < n * d; i++) dH1[i] += t1[i];
+    const dX = Float32Array.from(dH1);
+    mmTA(c.Z, dH1, n, d, d, g.Wo);
+    const dZ = mmTB(dH1, p.Wo, n, d, d);
+    const dA = mmTB(dZ, c.Vv, n, d, n);
+    const dVv = new Float32Array(n * d);
+    mmTA(c.A, dZ, n, n, d, dVv);
+    const sc = 1 / Math.sqrt(d);
+    const dS = new Float32Array(n * n);
+    for (let i = 0; i < n; i++) {
+      let s = 0;
+      for (let j = 0; j <= i; j++) s += dA[i * n + j] * c.A[i * n + j];
+      for (let j = 0; j <= i; j++) dS[i * n + j] = c.A[i * n + j] * (dA[i * n + j] - s) * sc;
+    }
+    const dQ = mm(dS, c.K, n, n, d);
+    const dK = new Float32Array(n * d);
+    mmTA(dS, c.Q, n, n, d, dK);
+    mmTA(c.X, dQ, n, d, d, g.Wq);
+    mmTA(c.X, dK, n, d, d, g.Wk);
+    mmTA(c.X, dVv, n, d, d, g.Wv);
+    const a1 = mmTB(dQ, p.Wq, n, d, d), a2 = mmTB(dK, p.Wk, n, d, d), a3 = mmTB(dVv, p.Wv, n, d, d);
+    for (let i = 0; i < n * d; i++) dX[i] += a1[i] + a2[i] + a3[i];
+    for (let i = 0; i < n; i++) for (let j = 0; j < d; j++) {
+      g.E[c.x[i] * d + j] += dX[i * d + j];
+      g.P[i * d + j] += dX[i * d + j];
+    }
+    return loss;
+  };
+
+  TinyGPT.prototype.zeroGrad = function () { for (const k in this.g) this.g[k].fill(0); };
+
+  TinyGPT.prototype.adam = function (lr) {
+    this.t++;
+    const b1 = 0.9, b2 = 0.999, eps = 1e-8, t = this.t;
+    const c1 = 1 - Math.pow(b1, t), c2 = 1 - Math.pow(b2, t);
+    // global grad-norm clipping
+    let norm = 0;
+    for (const k in this.g) { const G = this.g[k]; for (let i = 0; i < G.length; i++) norm += G[i] * G[i]; }
+    norm = Math.sqrt(norm);
+    const clip = norm > 1 ? 1 / norm : 1;
+    for (const k in this.p) {
+      const P = this.p[k], G = this.g[k], M = this.m[k], S = this.v[k];
+      for (let i = 0; i < P.length; i++) {
+        const gr = G[i] * clip;
+        M[i] = b1 * M[i] + (1 - b1) * gr;
+        S[i] = b2 * S[i] + (1 - b2) * gr * gr;
+        P[i] -= lr * (M[i] / c1) / (Math.sqrt(S[i] / c2) + eps);
+      }
+    }
+  };
+
+  // one optimisation step on a batch of windows taken from ids
+  TinyGPT.prototype.trainStep = function (ids, B, lr, rng) {
+    const T = this.T;
+    this.zeroGrad();
+    let loss = 0;
+    const scale = 1 / (B * T);
+    for (let b = 0; b < B; b++) {
+      const s = Math.floor(rng() * (ids.length - T - 1));
+      const x = ids.subarray(s, s + T), y = ids.subarray(s + 1, s + T + 1);
+      const c = this.forward(x);
+      loss += this.backward(c, y, scale);
+    }
+    this.adam(lr);
+    return loss / (B * T);
+  };
+
+  TinyGPT.prototype.evalLoss = function (ids, nWin, rng) {
+    const T = this.T; let loss = 0;
+    for (let b = 0; b < nWin; b++) {
+      const s = Math.floor(rng() * (ids.length - T - 1));
+      const c = this.forward(ids.subarray(s, s + T));
+      const y = ids.subarray(s + 1, s + T + 1), V = this.V;
+      for (let i = 0; i < T; i++) {
+        let mx = -Infinity; for (let j = 0; j < V; j++) mx = Math.max(mx, c.L[i * V + j]);
+        let sum = 0; for (let j = 0; j < V; j++) sum += Math.exp(c.L[i * V + j] - mx);
+        loss += Math.log(sum) + mx - c.L[i * V + y[i]];
+      }
+    }
+    return loss / (nWin * T);
+  };
+
+  TinyGPT.prototype.nextProbs = function (ctx, temp) {
+    const x = ctx.slice(-this.T);
+    const c = this.forward(x), V = this.V, n = x.length;
+    const out = new Float32Array(V);
+    let mx = -Infinity;
+    for (let j = 0; j < V; j++) mx = Math.max(mx, c.L[(n - 1) * V + j] / temp);
+    let s = 0;
+    for (let j = 0; j < V; j++) { out[j] = Math.exp(c.L[(n - 1) * V + j] / temp - mx); s += out[j]; }
+    for (let j = 0; j < V; j++) out[j] /= s;
+    return out;
+  };
+
+  TinyGPT.mulberry32 = mulberry32;
+  if (typeof module !== 'undefined') module.exports = TinyGPT; else root.TinyGPT = TinyGPT;
+})(this);
+</script><script>
+const SAMPLES = {
+  tr: { text: `EL ELE
+
+Ela ile Ali el ele.
+Lale ile Nil el ele.
+Ela, Ali, Lale, Nil el ele.
+Kenan ile Nalan el ele.
+Anne ile nine el ele.
+El ele, el ele. Aile el ele.
+
+KEK
+
+Ela, kek al. Ali, kek al.
+Anne iki kek al.
+Kek ne? Kek, kek.
+Nine keke nane ekle.
+Anne keke kekik ekle.
+Nalan naneli kek al.
+Ela, ilk keki al. Ali, iki keki al.
+Kenan, kek al. Kenan iki kek al.
+
+LALE
+
+Lale, lale al.
+Ela iki lale al.
+Nine lale ek. Anne lale ek.
+Ali, lale ek. Nil, lale ek.
+Lale ne? Lale, lale.
+Nalan lale al, nine lale ek.
+
+NANE
+
+Nalan nane al.
+Nane ne? Nane, nane.
+Nil, kekine nane ekle.
+Naneli kek, naneli kek.
+Anne naneli kek al.
+
+KALE
+
+Ali kil al. Kaan kil al.
+Kil ile kale. Kale, kale.
+Ali, kale ile kal. Kaan, kale ile kal.
+İki kale, iki kale.
+Kenan kale al, Ali kale al.
+
+KALK
+
+Ela, kalk. Ali, kalk.
+Kalk Kaan, kalk. Kek al.
+Nil, kalk. Nil, ilikle.
+Ali, kalk. Ali, ilikle.
+Kalk, ilikle, kek al.
+
+İNEK
+
+Kenan, inek ile kal.
+Nine inek al. Anne inek al.
+Nine ekin ek. Anne ekin ek.
+Ekin ne? Ekin, ekin.
+
+ELLE
+
+Ela elle kek al.
+Ali elle lale ek.
+Nalan elle kil al.
+Elle, elle! Elle al.
+
+KEKLİK
+
+Keklik! Keklik!
+Kaan, keklik ile kal.
+Keklik kekik ile kal.
+İki keklik, iki keklik.
+Ela keklik ile kal. Ali keklik ile kal.
+
+AİLE
+
+Anne, nine, Ela, Ali. Aile!
+Nine, Ela ile Ali.
+Nine, ninni! Ela ile Ali, ninni!
+Ela, anla. Ali, anla.
+Anne Lale ile Nil al.
+Aile ile kal. Aile el ele.
+
+ELA İLE ALİ
+
+Ela kalk. Ela ilikle.
+Ela iki kek al.
+Ali kalk. Ali lale al.
+Ela keke nane ekle.
+Ali kil al, kale ile kal.
+Nine, Ela ile Ali el ele.
+Anne, ninni! Aile el ele.
+`, focus: 'Ela kek al.', prompt: 'Ela ' },
+  en: { text: `The lighthouse keeper woke before the sun, as he always did. He climbed the stairs, one hundred and twelve of them, and wiped the salt from the glass. The sea was quiet. The gulls were not.
+
+"Good morning," he said to the gulls. The gulls said nothing useful.
+
+He made tea in the small kitchen at the bottom of the tower. He wrote in the logbook: wind from the west, sea calm, one boat at dawn. Then he sat by the window and watched the water change colour, grey to green to blue.
+
+Every day was much the same. The keeper liked it that way. He liked the sound of the stairs, the smell of the oil, the long light turning in the dark. He liked knowing that somewhere out there a ship could see his light and know where the rocks were.
+
+One morning a letter came with the supply boat. The keeper turned it over in his hands. It was from his sister, who lived in the city and did not understand why anyone would live on a rock in the sea.
+
+"Come home," the letter said. "The city is warm and full of people. You will like it here."
+
+The keeper read the letter twice. Then he climbed the stairs, one hundred and twelve of them, and looked out at the sea. The sea was quiet. The gulls were not.
+
+He wrote back that evening. "Thank you," he wrote, "but the light needs a keeper, and I need the light. Come and visit in the summer. The sea is kind in the summer, and the gulls are almost polite."
+
+His sister came in July. She brought a hat, a book and three kinds of biscuits. She climbed the stairs, one hundred and twelve of them, and stood at the top with her hand on the cold glass.
+
+"Oh," she said, and for a long time she said nothing else.
+
+That night they sat in the small kitchen and drank tea. The light turned above them, slow and steady, and far out on the water a ship turned with it, safe from the rocks.
+
+"I think I understand now," said his sister.
+
+"I know," said the keeper. "Everyone does, at the top of the stairs."
+`, focus: 'The lighthouse keeper', prompt: 'The ' }
+};
+
+const $ = (id) => document.getElementById(id);
+const CFG = { T: 32, d: 32, f: 64, B: 12, maxVocab: 96 };
+const UNK = '¤';
+const state = {
+  raw: '', text: '', chars: [], stoi: new Map(), ids: null, counts: null,
+  trainIds: null, valIds: null, hist: [], sampleRng: null, sampleKey: null,
+  model: null, model0: null, step: 0, seen: 0, running: false,
+  losses: [], evals: [], baseline: 0, unigram: 0, samples: [],
+  rng: null, focus: '', attView: 'soft', embView: 'tok', selRow: -1,
+  tokTab: 'char', bpe: null, bpeK: 60, gpt: {}, off0: null
+};
+
+/* ---------- helpers ---------- */
+const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+function showCh(c) { return c === ' ' ? '␣' : c === '\n' ? '↵' : c === '\t' ? '⇥' : c; }
+function chipHTML(pieces) {
+  return pieces.map((p, i) => {
+    const h = (i * 67) % 360;
+    const vis = esc(p).replace(/ /g, '<span class="sp">·</span>').replace(/\n/g, '<span class="sp">↵</span>');
+    return `<span class="chip" style="background:hsl(${h} 85% var(--chip-l) / var(--chip-a))">${vis}</span>`;
+  }).join('<wbr>');
+}
+function focusChars() { return [...state.focus].slice(0, 24); }
+function fmt(n) { return n.toLocaleString('en-US'); }
+function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+
+/* ---------- step 1: text ---------- */
+function clean(raw) {
+  let t = raw.replace(/\r\n?/g, '\n').replace(/\t/g, ' ').replace(/[ \u00a0]+/g, ' ').replace(/\n{3,}/g, '\n\n');
+  if ($('lower').checked) t = t.toLowerCase();
+  return t.trim();
+}
+function setText(raw) {
+  state.raw = raw;
+  const t = clean(raw);
+  state.text = t;
+  const words = (t.match(/\S+/g) || []).length;
+  const uniq = new Set(t).size;
+  $('textStats').innerHTML = `<span><b>${fmt(t.length)}</b> characters</span><span><b>${fmt(words)}</b> words</span><span><b>${uniq}</b> different characters</span><span><b>${fmt(t.split('\n').length)}</b> lines</span>`;
+  if (t.length < 300) {
+    $('textMsg').innerHTML = '<span class="warn">Add at least 300 characters so the model has something to learn from.</span>';
+    return false;
+  }
+  const removed = raw.length - t.length;
+  $('textMsg').textContent = removed > 0 ? `Cleaning removed ${fmt(removed)} extra spaces and blank lines.` : 'The text is clean. Nothing needed removing.';
+  buildAll();
+  return true;
+}
+
+/* ---------- vocabulary & model ---------- */
+function buildVocab() {
+  const freq = new Map();
+  for (const c of state.text) freq.set(c, (freq.get(c) || 0) + 1);
+  let entries = [...freq.entries()].sort((a, b) => b[1] - a[1]);
+  if (entries.length > CFG.maxVocab - 1) {
+    const rest = entries.slice(CFG.maxVocab - 1).reduce((s, e) => s + e[1], 0);
+    entries = entries.slice(0, CFG.maxVocab - 1).concat([[UNK, rest]]);
+  } else entries.push([UNK, 0]);
+  entries.sort((a, b) => a[0] === UNK ? 1 : b[0] === UNK ? -1 : a[0].localeCompare(b[0]));
+  state.chars = entries.map(e => e[0]);
+  state.counts = entries.map(e => e[1]);
+  state.stoi = new Map(state.chars.map((c, i) => [c, i]));
+  state.ids = Int32Array.from([...state.text].map(enc1));
+  const N = state.ids.length;
+  state.baseline = Math.log(state.chars.length);
+  state.unigram = -state.counts.reduce((s, c) => c ? s + (c / N) * Math.log(c / N) : s, 0);
+  const cut = Math.max(Math.floor(N * 0.9), N - Math.max(CFG.T + 2, Math.floor(N * 0.1)));
+  state.trainIds = state.ids.subarray(0, cut);
+  state.valIds = state.ids.subarray(cut);
+}
+function enc1(c) { return state.stoi.has(c) ? state.stoi.get(c) : state.stoi.get(UNK); }
+function known(c) { return state.stoi.has(c) && c !== UNK; }
+function valLoss(model) {
+  const ids = state.valIds, T = CFG.T, V = state.chars.length; let loss = 0, n = 0;
+  for (let s = 0; s + 1 < ids.length; s += T) {
+    const e = Math.min(s + T, ids.length - 1);
+    const c = model.forward(ids.subarray(s, e)), y = ids.subarray(s + 1, e + 1);
+    for (let i = 0; i < e - s; i++) {
+      let mx = -Infinity; for (let j = 0; j < V; j++) mx = Math.max(mx, c.L[i * V + j]);
+      let sum = 0; for (let j = 0; j < V; j++) sum += Math.exp(c.L[i * V + j] - mx);
+      loss += Math.log(sum) + mx - c.L[i * V + y[i]]; n++;
+    }
+  }
+  return n ? loss / n : null;
+}
+function encode(s) { return Int32Array.from([...s].map(enc1)); }
+
+function buildModel() {
+  stopTraining();
+  const cfg = { V: state.chars.length, T: CFG.T, d: CFG.d, f: CFG.f, seed: 1234 };
+  state.model = new TinyGPT(cfg);
+  state.model0 = new TinyGPT(cfg);
+  state.step = 0; state.seen = 0; state.losses = []; state.evals = []; state.samples = []; state.hist = [];
+  state.rng = TinyGPT.mulberry32(7); state.sampleRng = TinyGPT.mulberry32(11); ema = null;
+  state.evals.push([0, valLoss(state.model)]);
+  $('trainMsg').textContent = 'Training pauses by itself at 500, 1,000 and 2,000 steps so you can look around. If the held-out loss starts rising while the training loss keeps falling, the model is memorising rather than learning.';
+  let n = 0; for (const k in state.model.p) n += state.model.p[k].length;
+  $('kParams').textContent = fmt(n); $('heroParams').textContent = fmt(n);
+  state.off0 = offsets(state.model0);
+  updateKpis(); drawChart(); renderSamples();
+}
+
+function buildAll() {
+  buildVocab();
+  state.bpe = null;
+  buildModel();
+  const smp = state.sampleKey && SAMPLES[state.sampleKey];
+  const firstLine = (state.text.match(/[^\n.!?]{8,}/) || [state.text])[0].trim();
+  if (smp) {
+    const lc = $('lower').checked ? (x) => x.toLocaleLowerCase() : (x) => x;
+    state.focus = lc(smp.focus); $('focus').value = state.focus; $('prompt').value = lc(smp.prompt);
+  }
+  else {
+    if (!state.focus || ![...state.focus].every(known)) { state.focus = firstLine.slice(0, 24); $('focus').value = state.focus; }
+    if (!$('prompt').value || ![...$('prompt').value].every(known)) $('prompt').value = state.text.slice(0, 12);
+  }
+  renderRibbon(); renderTokens(); renderTokCompare(); renderVocab(); renderEmbed(); renderAttn(); renderLearned(); renderProbs();
+  $('genOut').textContent = '';
+}
+
+/* ---------- ribbon ---------- */
+function renderRibbon() {
+  const s = state.text.slice(0, 160).replace(/\n/g, ' ');
+  const pieces = s.match(/ ?[^\s]+/g) || [];
+  $('ribbon').innerHTML = chipHTML(pieces.slice(0, 22));
+}
+
+/* ---------- step 2: tokenizers ---------- */
+function preSplit(s) { return s.match(/ ?[\p{L}\p{N}']+| ?[^\s\p{L}\p{N}]+|\s+/gu) || []; }
+function trainBPE() {
+  const sample = state.text.slice(0, 40000);
+  const wc = new Map();
+  for (const w of preSplit(sample)) wc.set(w, (wc.get(w) || 0) + 1);
+  const words = [...wc.entries()].map(([w, c]) => ({ s: [...w], c }));
+  const merges = [];
+  for (let m = 0; m < 200; m++) {
+    const pc = new Map();
+    for (const w of words) for (let i = 0; i < w.s.length - 1; i++) {
+      const k = w.s[i] + '\u0000' + w.s[i + 1];
+      pc.set(k, (pc.get(k) || 0) + w.c);
+    }
+    let best = null, bc = 1;
+    for (const [k, c] of pc) if (c > bc) { bc = c; best = k; }
+    if (!best) break;
+    const [a, b] = best.split('\u0000');
+    merges.push([a, b, bc]);
+    for (const w of words) {
+      const out = [];
+      for (let i = 0; i < w.s.length; i++) {
+        if (i < w.s.length - 1 && w.s[i] === a && w.s[i + 1] === b) { out.push(a + b); i++; } else out.push(w.s[i]);
+      }
+      w.s = out;
+    }
+  }
+  state.bpe = merges;
+  state.bpeK = Math.min(state.bpeK, merges.length);
+}
+function bpeEncode(s, k) {
+  const out = [];
+  for (const w of preSplit(s)) {
+    let sym = [...w];
+    for (let m = 0; m < k; m++) {
+      const [a, b] = state.bpe[m];
+      if (sym.length < 2) break;
+      const o = [];
+      for (let i = 0; i < sym.length; i++) {
+        if (i < sym.length - 1 && sym[i] === a && sym[i + 1] === b) { o.push(a + b); i++; } else o.push(sym[i]);
+      }
+      sym = o;
+    }
+    out.push(...sym);
+  }
+  return out;
+}
+const GPT = {
+  gpt2: { url: 'https://cdn.jsdelivr.net/npm/gpt-tokenizer@2.9.0/dist/r50k_base.js', glob: 'GPTTokenizer_r50k_base', name: 'GPT-2', size: '0.5 MB', vocab: '50,257' },
+  gpt4: { url: 'https://cdn.jsdelivr.net/npm/gpt-tokenizer@2.9.0/dist/cl100k_base.js', glob: 'GPTTokenizer_cl100k_base', name: 'GPT-4', size: '1 MB', vocab: '100,277' },
+  gpt4o: { url: 'https://cdn.jsdelivr.net/npm/gpt-tokenizer@2.9.0/dist/o200k_base.js', glob: 'GPTTokenizer_o200k_base', name: 'GPT-4o', size: '2 MB', vocab: '200,019' }
+};
+function loadGPT(key) {
+  if (state.gpt[key]) return state.gpt[key];
+  state.gpt[key] = new Promise((res, rej) => {
+    const sc = document.createElement('script');
+    sc.src = GPT[key].url; sc.async = true;
+    sc.onload = () => window[GPT[key].glob] ? res(window[GPT[key].glob]) : rej();
+    sc.onerror = () => { state.gpt[key] = null; rej(); };
+    document.head.appendChild(sc);
+  });
+  return state.gpt[key];
+}
+function gptPieces(tok, s) {
+  const ids = tok.encode(s);
+  return { ids, pieces: ids.map(i => tok.decode([i])) };
+}
+
+async function renderTokens() {
+  const s = state.focus || '';
+  const box = $('tokBody');
+  const t = state.tokTab;
+  if (t === 'char') {
+    box.innerHTML = `<div class="chips">${chipHTML([...s])}</div>
+      <p class="msg"><b>${[...s].length}</b> tokens. Every character is its own token, so the vocabulary is tiny (${state.chars.length} entries, including ¤ for anything unknown) but sentences become long. That’s why this model is easy to build but can only see 32 characters at a time.</p>`;
+  } else if (t === 'bpe') {
+    if (!state.bpe) trainBPE();
+    const k = state.bpeK;
+    const pieces = bpeEncode(s, k);
+    const shown = state.bpe.slice(0, k).map(([a, b], i) => `<span class="${i === k - 1 ? 'last' : ''}">${esc(showCh2(a))} + ${esc(showCh2(b))}</span>`).join('');
+    box.innerHTML = `<div class="ctl"><label for="bpeK">Merges</label><input type="range" id="bpeK" min="0" max="${state.bpe.length}" value="${k}"><b style="font-variant-numeric:tabular-nums">${k}</b></div>
+      <div class="chips" style="margin-top:12px">${chipHTML(pieces)}</div>
+      <p class="msg"><b>${pieces.length}</b> tokens. Byte-pair encoding starts from characters and repeatedly glues together the pair that appears most often in your text. Drag the slider to replay it.</p>
+      <div class="merges">${shown || '<span>No merges yet: every character is separate.</span>'}</div>`;
+    $('bpeK').addEventListener('input', (e) => { state.bpeK = +e.target.value; renderTokens(); });
+  } else {
+    const g = GPT[t];
+    if (!state.gptReady || !state.gptReady[t]) box.innerHTML = `<p class="msg">Loading the ${g.name} tokenizer (${g.size})…</p>`;
+    try {
+      const tok = await loadGPT(t);
+      (state.gptReady = state.gptReady || {})[t] = true;
+      if (state.tokTab !== t) return;
+      const { ids, pieces } = gptPieces(tok, s);
+      box.innerHTML = `<div class="chips">${chipHTML(pieces)}</div>
+        <div class="ids" style="margin-top:10px">${ids.map(i => `<span>${i}</span>`).join('')}</div>
+        <p class="msg"><b>${ids.length}</b> tokens from a vocabulary of ${g.vocab}. Common words are a single token, often with the space in front of them included.</p>`;
+      renderTokCompare();
+    } catch (e) {
+      box.innerHTML = `<p class="msg warn">The ${g.name} tokenizer couldn’t be downloaded. Check your connection, then choose the tab again.</p>`;
+    }
+  }
+}
+function showCh2(c) { return c.replace(/ /g, '·').replace(/\n/g, '↵'); }
+
+let cmpCache = {};
+async function renderTokCompare() {
+  const t = state.text; if (!t) return;
+  if (!state.bpe) trainBPE();
+  const key = t.length + ':' + t.slice(0, 50);
+  if (cmpCache.key !== key) cmpCache = { key };
+  if (cmpCache.bpe == null) cmpCache.bpe = bpeEncode(t.slice(0, 40000), state.bpe.length).length * (t.length / Math.min(t.length, 40000));
+  cmpCache.rows = null;
+  const rows = [['Characters', t.length, String(state.chars.length)], ['BPE, ' + state.bpe.length + ' merges', Math.round(cmpCache.bpe), String(new Set([...state.chars, ...state.bpe.map(m => m[0] + m[1])]).size)]];
+  for (const k of ['gpt2', 'gpt4', 'gpt4o']) {
+    const p = state.gpt[k];
+    if (p) {
+      try {
+        const tok = await p;
+        if (cmpCache[k] == null) cmpCache[k] = tok.encode(t).length;
+        rows.push([GPT[k].name, cmpCache[k], GPT[k].vocab]);
+      } catch (e) { rows.push([GPT[k].name, null, '']); }
+    } else rows.push([GPT[k].name, null, '']);
+  }
+  const max = t.length;
+  cmpCache.rows = rows;
+  $('tokCmp').innerHTML = `<tr><th>Tokenizer</th><th style="text-align:right">Tokens</th><th style="text-align:right">Chars per token</th><th style="width:30%"></th><th style="text-align:right">Vocabulary</th></tr>` +
+    rows.map(([n, c, v]) => c == null
+      ? `<tr><td>${n}</td><td class="num msg" colspan="3">Open the ${n} tab to load it</td><td class="num">${v}</td></tr>`
+      : `<tr><td>${n}</td><td class="num">${fmt(c)}</td><td class="num">${(t.length / c).toFixed(2)}</td><td><span class="bar" style="width:${(c / max * 100).toFixed(1)}%"></span></td><td class="num">${v}</td></tr>`).join('');
+}
+
+/* ---------- step 3: vocab ---------- */
+function renderVocab() {
+  const max = Math.max(...state.counts);
+  $('vocabTitle').textContent = `${state.chars.length} characters, with ID and how often each appears`;
+  $('vocab').innerHTML = state.chars.map((c, i) =>
+    `<div title="${c === UNK ? 'Stands in for any character that isn’t in your text' : '“' + showCh(c) + '” appears ' + fmt(state.counts[i]) + ' times'}"><b>${esc(showCh(c))}</b><i>${i}</i><span style="width:${Math.max(4, state.counts[i] / max * 100)}%"></span></div>`).join('') ;
+  const s = focusChars();
+  $('ids').innerHTML = s.map(c => `<span class="${known(c) ? '' : 'unk'}" title="${known(c) ? '' : 'Not in your text, so it becomes ¤'}">${esc(showCh(c))}<small>${enc1(c)}</small></span>`).join('');
+}
+
+/* ---------- heatmaps ---------- */
+function divColor(v, m) {
+  const a = Math.min(1, Math.abs(v) / (m || 1));
+  return `rgb(var(${v >= 0 ? '--teal-rgb' : '--rose-rgb'}) / ${(a * 0.95).toFixed(3)})`;
+}
+function renderEmbed() {
+  const s = focusChars(); if (!s.length || !state.model) { $('embHeat').innerHTML = ''; return; }
+  const d = CFG.d, p = state.model.p, ids = s.map(enc1);
+  const rows = ids.map((id, i) => {
+    const r = new Float32Array(d);
+    for (let j = 0; j < d; j++) {
+      const tv = p.E[id * d + j], pv = p.P[i * d + j];
+      r[j] = state.embView === 'tok' ? tv : state.embView === 'pos' ? pv : tv + pv;
+    }
+    return r;
+  });
+  let m = 0; rows.forEach(r => r.forEach(v => m = Math.max(m, Math.abs(v))));
+  const el = $('embHeat');
+  el.style.gridTemplateColumns = `auto repeat(${d}, var(--cw))`;
+  el.style.setProperty('--cw', '13px'); el.style.setProperty('--ch', '15px');
+  el.innerHTML = rows.map((r, i) => `<div class="lab rl">${state.embView === 'pos' ? i : esc(showCh(s[i]))}</div>` +
+    [...r].map(v => `<div class="c" style="background:${divColor(v, m)}" title="${v.toFixed(3)}"></div>`).join('')).join('');
+}
+
+function attHTML(model, s, view, clickable) {
+  const x = encode(s.join(''));
+  const c = model.forward(x), n = x.length;
+  let M = c.A, mx = 1, signed = false;
+  if (view === 'raw' || view === 'mask') {
+    M = c.S; signed = true; mx = 0;
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) if (view === 'raw' || j <= i) mx = Math.max(mx, Math.abs(M[i * n + j]));
+  } else { mx = 0; for (let i = 0; i < n * n; i++) mx = Math.max(mx, M[i]); }
+  let h = `<div></div>` + s.map(ch => `<div class="lab">${esc(showCh(ch))}</div>`).join('');
+  for (let i = 0; i < n; i++) {
+    h += `<div class="lab rl">${esc(showCh(s[i]))}</div>`;
+    for (let j = 0; j < n; j++) {
+      const v = M[i * n + j];
+      let bg;
+      if (view === 'mask' && j > i) bg = 'repeating-linear-gradient(45deg, var(--line) 0 2px, transparent 2px 5px)';
+      else if (view === 'soft' && j > i) bg = 'transparent';
+      else bg = signed ? divColor(v, mx) : `rgb(var(--teal-rgb) / ${(Math.sqrt(v / (mx || 1)) * .95).toFixed(3)})`;
+      const title = (view === 'soft' || j <= i || view === 'raw') ? (view === 'soft' ? (v * 100).toFixed(1) + '%' : v.toFixed(2)) : 'hidden';
+      h += `<div class="c${clickable && state.selRow === i && j <= i ? ' row-on' : ''}" data-r="${i}" style="background:${bg}" title="${esc(showCh(s[i]))} → ${esc(showCh(s[j]))}: ${title}"></div>`;
+    }
+  }
+  return { h, n, c };
+}
+function renderAttn() {
+  const s = focusChars(); const el = $('attHeat');
+  if (!s.length || !state.model) { el.innerHTML = ''; return; }
+  const { h, n, c } = attHTML(state.model, s, state.attView, true);
+  el.style.gridTemplateColumns = `auto repeat(${n}, var(--cw))`;
+  el.style.setProperty('--cw', '20px'); el.style.setProperty('--ch', '20px');
+  el.innerHTML = h;
+  $('attNote').textContent = state.step ? 'The model has started training, so these weights now reflect what it learned. Compare with the untrained version in step 7.' : 'Right now the model is untrained, so the pattern is noise. Come back after step 6.';
+  $('attStep').textContent = state.step ? `after ${fmt(state.step)} training steps` : 'untrained';
+  const lg = {
+    raw: '<span><i style="background:rgb(var(--rose-rgb))"></i>query and key disagree</span><span><i style="background:rgb(var(--teal-rgb))"></i>query and key match</span>',
+    mask: '<span><i style="background:repeating-linear-gradient(45deg,var(--line) 0 2px,transparent 2px 5px)"></i>future character, hidden so the model can’t peek at the answer</span>',
+    soft: '<span><i style="background:rgb(var(--teal-rgb))"></i>more attention</span><span>Each row adds up to 100%.</span>'
+  };
+  $('attLegend').innerHTML = lg[state.attView];
+  const r = state.selRow >= 0 && state.selRow < n ? state.selRow : -1;
+  if (r < 0) { $('attExplain').innerHTML = '<span class="msg">Choose any square to inspect its row.</span>'; return; }
+  const w = []; for (let j = 0; j <= r; j++) w.push([j, c.A[r * n + j]]);
+  w.sort((a, b) => b[1] - a[1]);
+  const V = state.chars.length, L = c.L.subarray(r * V, (r + 1) * V);
+  const pr = softmax(L, 1); const top = [...pr].map((p, i) => [i, p]).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  $('attExplain').innerHTML = `Reading <span class="k">${esc(showCh(s[r]))}</span> at position ${r}, it looks most at ` +
+    w.slice(0, 3).map(([j, p]) => `<span class="k">${esc(showCh(s[j]))}</span> (position ${j}, ${(p * 100).toFixed(0)}%)`).join(', ') +
+    `. It predicts the next character is ` + top.map(([i, p]) => `<span class="k">${esc(showCh(state.chars[i]))}</span> ${(p * 100).toFixed(0)}%`).join(', ') +
+    (r + 1 < n ? `. The real next character: <span class="k">${esc(showCh(s[r + 1]))}</span>` : '.');
+}
+function softmax(L, temp) {
+  const o = new Float32Array(L.length); let m = -Infinity;
+  for (const v of L) m = Math.max(m, v / temp);
+  let s = 0; for (let i = 0; i < L.length; i++) { o[i] = Math.exp(L[i] / temp - m); s += o[i]; }
+  for (let i = 0; i < o.length; i++) o[i] /= s; return o;
+}
+
+/* ---------- step 7 ---------- */
+function offsets(model) {
+  const rng = TinyGPT.mulberry32(99), K = 8, acc = new Float64Array(K + 1); let rows = 0;
+  const ids = state.trainIds, T = CFG.T;
+  for (let w = 0; w < 24; w++) {
+    const st = Math.floor(rng() * (ids.length - T - 1));
+    const c = model.forward(ids.subarray(st, st + T));
+    for (let i = K; i < T; i++) {
+      rows++;
+      for (let j = 0; j <= i; j++) { const k = i - j; acc[Math.min(k, K)] += c.A[i * T + j]; }
+    }
+  }
+  return [...acc].map(v => v / rows);
+}
+function offHTML(o) {
+  const mx = Math.max(...o);
+  return o.map((v, k) => `<div title="${(v * 100).toFixed(1)}%"><span style="height:${(v / mx * 100).toFixed(1)}%"></span>${k === 0 ? 'self' : k === 8 ? '8+' : '−' + k}</div>`).join('');
+}
+function renderLearned() {
+  const s = focusChars(); if (!s.length || !state.model) return;
+  for (const [id, m] of [['heatBefore', state.model0], ['heatNow', state.model]]) {
+    const { h, n } = attHTML(m, s, 'soft', false);
+    const el = $(id);
+    el.style.gridTemplateColumns = `auto repeat(${n}, var(--cw))`;
+    el.style.setProperty('--cw', '12px'); el.style.setProperty('--ch', '12px');
+    el.innerHTML = h;
+  }
+  $('nowTitle').textContent = state.step ? `After ${fmt(state.step)} steps` : 'Now (not trained yet)';
+  $('offBefore').innerHTML = offHTML(state.off0);
+  $('offNow').innerHTML = offHTML(offsets(state.model));
+}
+
+/* ---------- step 6: training ---------- */
+function updateKpis() {
+  $('kStep').textContent = fmt(state.step);
+  const l = state.losses.length ? state.losses[state.losses.length - 1][1] : null;
+  $('kLoss').textContent = l == null ? '–' : l.toFixed(2);
+  $('kSeen').textContent = fmt(state.seen);
+  const v = state.evals.length ? state.evals[state.evals.length - 1][1] : null;
+  $('kVal').textContent = v == null ? '–' : v.toFixed(2);
+}
+let ema = null;
+const MILESTONES = [500, 1000, 2000];
+function trainLoop() {
+  if (!state.running) return;
+  const lr = +$('lr').value, t0 = performance.now();
+  let did = 0;
+  let pause = false;
+  while (performance.now() - t0 < 28) {
+    const l = state.model.trainStep(state.trainIds, CFG.B, lr, state.rng);
+    state.step++; state.seen += CFG.B * CFG.T; did++;
+    ema = ema == null ? l : ema * 0.95 + l * 0.05;
+    if (state.step % 5 === 0) state.losses.push([state.step, ema]);
+    if (state.step % 25 === 0) state.evals.push([state.step, valLoss(state.model)]);
+    if (state.step % 100 === 0) state.hist.push([state.step, ema, state.evals[state.evals.length - 1][1]]);
+    if (state.step % 150 === 0) addSample();
+    if (MILESTONES.includes(state.step)) { pause = true; break; }
+  }
+  if (pause) {
+    updateKpis(); drawChart(); stopTraining();
+    renderAttn(); renderEmbed();
+    $('trainMsg').textContent = `Paused at ${fmt(state.step)} steps. Look at steps 5, 7 and 8, then come back and continue.` + (state.step === 2000 ? ' From here it keeps going until you pause it.' : '');
+    return;
+  }
+  updateKpis(); drawChart();
+  if (state.step % 30 < did || did > 30) { renderAttn(); if (visible('s-learned')) renderLearned(); if (visible('s-embed')) renderEmbed(); if (visible('s-gen')) renderProbs(); }
+  requestAnimationFrame(trainLoop);
+}
+function visible(id) { const r = $(id).getBoundingClientRect(); return r.bottom > 0 && r.top < innerHeight; }
+function startTraining() {
+  if (!state.model || state.ids.length < CFG.T + 2) return;
+  state.running = true; $('trainBtn').textContent = 'Pause training';
+  if (state.step === 0) { ema = null; state.samples = []; addSample(); }
+  $('trainMsg').textContent = 'Training…';
+  requestAnimationFrame(trainLoop);
+}
+function stopTraining() {
+  if (state.running) { state.running = false; renderLearned(); renderProbs(); }
+  $('trainBtn').textContent = state.step ? 'Continue training' : 'Start training';
+}
+function addSample() {
+  const seed = state.text.slice(0, 1);
+  state.samples.unshift([state.step, generate(seed, 140, 0.8, state.sampleRng)]);
+  state.allSamples = state.step === 0 ? [] : (state.allSamples || []);
+  state.allSamples.push(state.samples[0]);
+  state.samples = state.samples.slice(0, 6);
+  renderSamples();
+}
+function renderSamples() {
+  if (!state.samples.length) { $('samples').innerHTML = '<li><small>Start training to see samples.</small></li>'; return; }
+  $('samples').innerHTML = state.samples.map(([st, t]) => `<li><small>Step ${fmt(st)}</small>${esc(t)}</li>`).join('');
+}
+function drawChart() {
+  const cv = $('chart'), dpr = devicePixelRatio || 1;
+  const W = cv.clientWidth, H = cv.clientHeight; if (!W) return;
+  cv.width = W * dpr; cv.height = H * dpr;
+  const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const cs = getComputedStyle(document.documentElement);
+  const ink = cs.getPropertyValue('--ink').trim(), muted = cs.getPropertyValue('--muted').trim(), line = cs.getPropertyValue('--line').trim(), mark = cs.getPropertyValue('--mark').trim(), teal = 'rgb(' + cs.getPropertyValue('--teal-rgb').trim() + ')';
+  const pad = { l: 36, r: 10, t: 10, b: 24 };
+  const maxX = Math.max(200, state.step), maxY = Math.ceil(Math.max(state.baseline, ...state.evals.map(e => e[1] || 0)) + 0.3), minY = 0;
+  const X = (s) => pad.l + (s / maxX) * (W - pad.l - pad.r), Y = (v) => pad.t + (1 - (v - minY) / (maxY - minY)) * (H - pad.t - pad.b);
+  g.font = '12px ' + getComputedStyle(document.body).fontFamily; g.fillStyle = muted; g.strokeStyle = line; g.lineWidth = 1;
+  for (let v = 0; v <= maxY; v++) { g.beginPath(); g.moveTo(pad.l, Y(v)); g.lineTo(W - pad.r, Y(v)); g.stroke(); g.fillText(String(v), 8, Y(v) + 4); }
+  g.fillText(fmt(maxX) + ' steps', W - pad.r - 70, H - 6); g.fillText('0', pad.l, H - 6);
+  g.setLineDash([5, 4]); g.lineWidth = 2;
+  g.strokeStyle = mark; g.beginPath(); g.moveTo(pad.l, Y(state.baseline)); g.lineTo(W - pad.r, Y(state.baseline)); g.stroke();
+  g.strokeStyle = teal; g.beginPath(); g.moveTo(pad.l, Y(state.unigram)); g.lineTo(W - pad.r, Y(state.unigram)); g.stroke();
+  g.setLineDash([]);
+  if (state.evals.length > 1) {
+    g.strokeStyle = 'rgb(' + cs.getPropertyValue('--rose-rgb').trim() + ')'; g.lineWidth = 2; g.beginPath();
+    state.evals.forEach(([s, l], i) => i ? g.lineTo(X(s), Y(Math.min(l, maxY))) : g.moveTo(X(s), Y(Math.min(l, maxY))));
+    g.stroke();
+  }
+  if (state.losses.length) {
+    g.strokeStyle = ink; g.lineWidth = 2; g.beginPath();
+    state.losses.forEach(([s, l], i) => i ? g.lineTo(X(s), Y(Math.min(l, maxY))) : g.moveTo(X(s), Y(Math.min(l, maxY))));
+    g.stroke();
+  }
+}
+
+/* ---------- step 8: generate ---------- */
+function sample(p, rng) { let r = (rng || Math.random)(), a = 0; for (let i = 0; i < p.length; i++) { a += p[i]; if (r < a) return i; } return p.length - 1; }
+function generate(prompt, n, temp, rng) {
+  const ctx = [...encode(prompt)]; let out = '';
+  for (let i = 0; i < n; i++) {
+    const p = state.model.nextProbs(Int32Array.from(ctx.slice(-CFG.T)), temp);
+    const id = sample(p, rng); ctx.push(id); out += state.chars[id];
+  }
+  return prompt + out;
+}
+function renderProbs() {
+  if (!state.model) return;
+  const pr = $('prompt').value || ' ', temp = +$('temp').value;
+  const p = state.model.nextProbs(encode(pr.slice(-CFG.T)), temp);
+  const top = [...p].map((v, i) => [i, v]).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  $('probTitle').textContent = `Odds for the character after “${pr.slice(-16)}”`;
+  $('probs').innerHTML = top.map(([i, v]) => `<b>${esc(showCh(state.chars[i]))}</b><span class="bar" style="width:${Math.max(1, v * 100).toFixed(1)}%"></span><i>${(v * 100).toFixed(1)}%</i>`).join('');
+}
+
+
+/* ---------- copy results for an AI ---------- */
+function pct(v) { return (v * 100).toFixed(1) + '%'; }
+function q(c) { return c === ' ' ? '␣(space)' : c === '\n' ? '↵(newline)' : c; }
+function buildReport() {
+  const L = [];
+  let lang = navigator.language || 'en';
+  try { lang = new Intl.DisplayNames(['en'], { type: 'language' }).of(lang); } catch (e) {}
+  L.push('These are results from Elakin (elakin v1.0), a web page that trains a small character-level Transformer in the browser. Please explain them to me: what the model learned, what the numbers mean, and anything surprising or worth trying next.');
+  L.push(`Please answer in ${lang}.`, '');
+  let np = 0; for (const k in state.model.p) np += state.model.p[k].length;
+  L.push('## Model', `One Transformer block (single attention head + MLP with ReLU, residual connections, no layer norm). Character-level tokens. Context ${CFG.T} characters, embedding size ${CFG.d}, MLP size ${CFG.f}, ${fmt(np)} parameters. Adam optimiser, learning rate ${$('lr').value}, batches of ${CFG.B} random windows.`, '');
+  const t = state.text;
+  L.push('## Training text', `${fmt(t.length)} characters, ${fmt((t.match(/\S+/g) || []).length)} words, ${state.chars.length - 1} distinct characters (+1 token ¤ for unknown characters). Lowercased: ${$('lower').checked ? 'yes' : 'no'}. The last ${fmt(state.valIds.length)} characters are held out and never trained on.`);
+  L.push('Beginning of the text:', '"""', t.slice(0, 400) + (t.length > 400 ? ' …' : ''), '"""', '');
+  const order = state.chars.map((c, i) => [c, state.counts[i]]).filter(e => e[0] !== UNK).sort((a, b) => b[1] - a[1]);
+  L.push('## Vocabulary', 'Most frequent: ' + order.slice(0, 15).map(([c, n]) => `${q(c)} ${n}`).join(', '));
+  const rare = order.filter(e => e[1] <= 2);
+  if (rare.length) L.push('Seen only once or twice: ' + rare.map(([c, n]) => `${q(c)} ${n}`).join(', '));
+  L.push('');
+  if (cmpCache.rows) {
+    L.push('## Tokenizers on the whole text', 'Tokenizer | tokens | characters per token | vocabulary size');
+    cmpCache.rows.forEach(([n, c, v]) => L.push(c == null ? `${n} | not loaded | | ${v}` : `${n} | ${c} | ${(t.length / c).toFixed(2)} | ${v}`));
+    L.push('(The BPE tokenizer was trained on this same text, up to 200 merges.)');
+  }
+  if (state.bpe) L.push('First BPE merges, in order (· is a space): ' + state.bpe.slice(0, 30).map(([a, b]) => `${showCh2(a)}+${showCh2(b)}`).join(', '));
+  L.push('');
+  const f = state.focus;
+  L.push('## Inspected text', `"${f}"`, 'Characters: ' + [...f].map(q).join(' | '));
+  if (state.bpe) L.push('BPE (' + state.bpeK + ' merges): ' + bpeEncode(f, state.bpeK).map(x => `[${x}]`).join(' '));
+  for (const k of ['gpt2', 'gpt4', 'gpt4o']) {
+    const tok = window[GPT[k].glob];
+    if (tok) { const ids = tok.encode(f); L.push(`${GPT[k].name}: ` + ids.map(i => `[${tok.decode([i])}]=${i}`).join(' ')); }
+  }
+  L.push('');
+  L.push('## Training', `Steps trained: ${fmt(state.step)}. Loss is cross-entropy in nats. Random guessing = ${state.baseline.toFixed(2)}. Knowing only letter frequencies = ${state.unigram.toFixed(2)}.`);
+  if (state.hist.length) {
+    L.push('step | training loss | held-out loss');
+    const h = state.hist.length > 20 ? state.hist.filter((_, i) => i % Math.ceil(state.hist.length / 20) === 0 || i === state.hist.length - 1) : state.hist;
+    h.forEach(([st, a, b]) => L.push(`${st} | ${a.toFixed(3)} | ${b == null ? '' : b.toFixed(3)}`));
+  } else L.push('Not trained yet.');
+  L.push('');
+  const fmtOff = (o) => o.map((v, k) => `${k === 0 ? 'self' : k === 8 ? '8+' : '-' + k}: ${pct(v)}`).join(', ');
+  L.push('## Average attention by distance (over many windows of the text)', 'Before training: ' + fmtOff(state.off0), 'Now: ' + fmtOff(offsets(state.model)), '');
+  const s = focusChars();
+  if (s.length) {
+    const c = state.model.forward(encode(s.join(''))), n = s.length, V = state.chars.length;
+    L.push(`## Attention on the inspected text (first ${n} characters), current model`, 'For each position: where it looks most → what it predicts next (real next character).');
+    for (let r = 0; r < n; r++) {
+      const w = []; for (let j = 0; j <= r; j++) w.push([j, c.A[r * n + j]]);
+      w.sort((a, b) => b[1] - a[1]);
+      const pr = softmax(c.L.subarray(r * V, (r + 1) * V), 1);
+      const top = [...pr].map((p, i) => [i, p]).sort((a, b) => b[1] - a[1]).slice(0, 3);
+      L.push(`${r} ${q(s[r])}: looks at ` + w.slice(0, 3).map(([j, p]) => `${q(s[j])}@${j} ${pct(p)}`).join(', ') + ' → predicts ' + top.map(([i, p]) => `${q(state.chars[i])} ${pct(p)}`).join(', ') + (r + 1 < n ? ` (real: ${q(s[r + 1])})` : ''));
+    }
+    L.push('');
+  }
+  if (state.allSamples && state.allSamples.length) {
+    L.push('## Samples written during training (temperature 0.8, each starts from the first character of the text)');
+    state.allSamples.slice(-8).forEach(([st, tx]) => L.push(`Step ${st}: ${tx.replace(/\n/g, ' ↵ ')}`));
+    L.push('');
+  }
+  if (state.lastGen) L.push('## Last generated text', `Prompt "${state.lastGen.prompt}", temperature ${state.lastGen.temp}:`, state.lastGen.text.replace(/\n/g, ' ↵ '));
+  return L.join('\n');
+}
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove('on'), 1800); }
+async function copyReport() {
+  const txt = buildReport();
+  try { await navigator.clipboard.writeText(txt); toast('Copied. Paste it into an AI chat.'); return; } catch (e) {}
+  const ta = document.createElement('textarea'); ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select();
+  let ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+  ta.remove();
+  if (ok) { toast('Copied. Paste it into an AI chat.'); return; }
+  $('copyTxt').value = txt; $('copyDlg').showModal(); $('copyTxt').select();
+}
+$('copyBtn').onclick = copyReport;
+document.querySelectorAll('.copyinline').forEach(b => b.onclick = copyReport);
+$('copyClose').onclick = () => $('copyDlg').close();
+
+/* ---------- wiring ---------- */
+function useSample(k) { state.sampleKey = k; $('txt').value = SAMPLES[k].text; setText(SAMPLES[k].text); }
+$('sampleTr').onclick = () => useSample('tr');
+$('sampleEn').onclick = () => useSample('en');
+$('txt').addEventListener('input', debounce(() => { state.sampleKey = null; setText($('txt').value); }, 500));
+$('lower').onchange = () => setText($('txt').value);
+$('fileBtn').addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('file').click(); } });
+function readFile(f) {
+  if (!f) return;
+  if (f.size > 3e6) { $('textMsg').innerHTML = '<span class="warn">That file is over 3 MB. Use a shorter excerpt; this model can’t use that much text anyway.</span>'; return; }
+  const r = new FileReader(); r.onload = () => { state.sampleKey = null; $('txt').value = r.result; setText(r.result); }; r.readAsText(f);
+}
+$('file').onchange = (e) => readFile(e.target.files[0]);
+const ta = $('txt');
+ta.addEventListener('dragover', (e) => { e.preventDefault(); ta.classList.add('drag'); });
+ta.addEventListener('dragleave', () => ta.classList.remove('drag'));
+ta.addEventListener('drop', (e) => { e.preventDefault(); ta.classList.remove('drag'); readFile(e.dataTransfer.files[0]); });
+
+$('focus').addEventListener('input', debounce(() => {
+  state.focus = $('focus').value; state.selRow = -1;
+  renderTokens(); renderVocab(); renderEmbed(); renderAttn(); renderLearned();
+}, 200));
+$('tokTabs').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  state.tokTab = b.dataset.t;
+  [...$('tokTabs').children].forEach(x => x.setAttribute('aria-selected', x === b));
+  renderTokens();
+});
+function seg(id, key, fn) {
+  $(id).addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    state[key] = b.dataset.v;
+    [...$(id).children].forEach(x => x.setAttribute('aria-pressed', x === b));
+    fn();
+  });
+}
+seg('embSeg', 'embView', renderEmbed);
+seg('attSeg', 'attView', renderAttn);
+$('attHeat').addEventListener('click', (e) => { const c = e.target.closest('.c'); if (!c) return; state.selRow = +c.dataset.r; renderAttn(); });
+$('trainBtn').onclick = () => state.running ? stopTraining() : startTraining();
+$('resetBtn').onclick = () => { buildModel(); renderAttn(); renderLearned(); renderEmbed(); renderProbs(); $('genOut').textContent = ''; };
+$('temp').oninput = () => { $('tempV').textContent = (+$('temp').value).toFixed(2); renderProbs(); };
+$('prompt').addEventListener('input', debounce(renderProbs, 150));
+$('genBtn').onclick = () => {
+  const pr = $('prompt').value, out = generate(pr, 300, +$('temp').value);
+  $('genOut').innerHTML = `<span class="p">${esc(pr)}</span>${esc(out.slice(pr.length))}`;
+  state.lastGen = { prompt: pr, temp: +$('temp').value, text: out };
+};
+addEventListener('resize', debounce(drawChart, 150));
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', drawChart);
+
+// highlight current step in the rail
+const links = [...document.querySelectorAll('#railList a')];
+const io = new IntersectionObserver((ents) => {
+  ents.forEach(en => {
+    if (en.isIntersecting) {
+      const idx = links.findIndex(a => a.getAttribute('href') === '#' + en.target.id);
+      links.forEach((a, i) => { a.classList.toggle('on', i === idx); a.classList.toggle('done', i < idx); });
+      if (innerWidth <= 860) links[idx].scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+    }
+  });
+}, { rootMargin: '-40% 0px -55% 0px' });
+document.querySelectorAll('section.step').forEach(s => io.observe(s));
+
+$('lower').checked = false;
+useSample((navigator.language || '').toLowerCase().startsWith('tr') ? 'tr' : 'en');
+</script></body></html>
