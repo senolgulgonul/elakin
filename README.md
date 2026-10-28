@@ -19,7 +19,7 @@ The name comes from **e, l, a, k, i, n**: the first six letters Turkish children
 7. **What attention learned** – attention before and after training, and how far back the model looks on average.
 8. **Generate** – write new text with an adjustable temperature, and see the odds for the next character.
 
-The copy icon copies all results as plain text, ready to paste into an AI chat for an explanation.
+The copy button (bottom right) copies all results as plain text, ready to paste into an AI chat for an explanation. The EN/TR switch at the top changes the interface language.
 
 ## The model
 
@@ -57,4 +57,4 @@ Elakin, büyük dil modellerinin nasıl çalıştığını, içine bakılabilece
 
 ---
 
-Elakin v1.2 · Şenol Gülgönül · MIT License
+Elakin v1.3 · Şenol Gülgönül · MIT License

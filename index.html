@@ -149,7 +149,16 @@ input[type=range]{width:100%;accent-color:var(--ink)}
 .fab{position:fixed;right:20px;bottom:calc(20px + env(safe-area-inset-bottom,0px));width:52px;height:52px;padding:0;justify-content:center;border-radius:50%;background:var(--surface);box-shadow:0 4px 16px rgb(0 0 0 / .15);z-index:20}
 .toast{position:fixed;right:84px;bottom:calc(32px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--paper);font-size:14px;padding:6px 12px;border-radius:8px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20}
 .toast.on{opacity:1}
-.copyinline{width:40px;height:40px;padding:0;justify-content:center;border-radius:50%;border-color:var(--line)}
+.seg.lang button{padding:4px 10px;font-size:13px}
+.qkv{margin-top:18px;border-top:1px solid var(--line);padding-top:14px;font-size:14px}
+.qkv h4{margin:0 0 8px;font-size:14px;font-weight:600}
+.qkv table{border-collapse:collapse;width:100%;font-size:13px}
+.qkv td,.qkv th{padding:4px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.qkv th{font-weight:600;color:var(--muted);font-size:12px}
+.qkv td:first-child,.qkv th:first-child{text-align:left;font-family:var(--mono)}
+.qkv .strip{display:inline-grid;grid-template-columns:repeat(32,5px);gap:1px;vertical-align:middle}
+.qkv .strip i{display:block;width:5px;height:12px;border-radius:1px}
+.qkv .f{font-family:var(--mono);background:var(--paper);padding:2px 6px;border-radius:4px;display:inline-block;margin:2px 0}
 dialog{border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);width:min(640px,92vw);padding:20px}
 dialog::backdrop{background:rgb(0 0 0 / .4)}
 dialog textarea{min-height:300px;font-size:12px}
@@ -176,7 +185,7 @@ footer.foot p{margin:0 0 6px}
 <body>
 <div class="layout">
 <nav class="rail" aria-label="Steps">
-  <h2>Elakin <span style="font-family:var(--mono);font-size:12px;color:var(--muted);font-weight:400">v1.2</span></h2>
+  <h2>Elakin <span style="font-family:var(--mono);font-size:12px;color:var(--muted);font-weight:400">v1.3</span></h2>
   <ol id="railList">
     <li><a href="#s-text"><span class="n">1</span>Your text</a></li>
     <li><a href="#s-tokens"><span class="n">2</span>Tokens</a></li>
@@ -192,7 +201,7 @@ footer.foot p{margin:0 0 6px}
 
 <main>
 <header class="hero">
-  <div class="brand"><b>Elakin</b><span>v1.2</span><span class="spacer" style="border:0;flex:1"></span><button class="copyinline" aria-label="Copy all results as text, to paste into an AI chat" title="Copy all results as text, to paste into an AI chat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div>
+  <div class="brand"><b>Elakin</b><span>v1.3</span><span class="spacer" style="border:0;flex:1"></span><div class="seg lang" id="langSeg"><button aria-pressed="true" data-l="en">EN</button><button aria-pressed="false" data-l="tr">TR</button></div></div>
   <h1>Train a tiny language model on your own text, and watch every step.</h1>
   <p>Large language models are built from the same pieces you’ll see here: tokens, embeddings, attention and a training loop that nudges millions of numbers. This one has <span id="heroParams">about twelve thousand</span> of them, small enough to look at.</p>
   <p style="font-size:16px;margin-top:12px">The name comes from <span style="font-family:var(--mono)">e, l, a, k, i, n</span>: the first six letters Turkish children learn to read. The Turkish sample text uses only those letters.</p>
@@ -202,7 +211,7 @@ footer.foot p{margin:0 0 6px}
 <section class="step" id="s-text">
   <h2><span class="n">1</span>Your text</h2>
   <p class="lede">The model will learn only from what you give it. A few pages of plain text in any language is plenty; more text gives better results but trains more slowly. The last 10% is kept aside to test the model on text it hasn’t seen.</p>
-  <textarea id="txt" spellcheck="false" placeholder="Paste text here, or drop a .txt file on this box."></textarea>
+  <textarea id="txt" spellcheck="false" placeholder="Paste text here, or drop a .txt file on this box." data-ph-tr="Metni buraya yapıştırın ya da bir .txt dosyasını bu kutuya bırakın."></textarea>
   <div class="row" style="margin-top:12px">
     <label class="btn" for="file" tabindex="0" id="fileBtn">Load a .txt file</label>
     <input type="file" id="file" accept=".txt,.md,text/plain">
@@ -282,6 +291,7 @@ footer.foot p{margin:0 0 6px}
     <div class="scroll"><div class="heat att" id="attHeat"></div></div>
     <div class="legend" id="attLegend"></div>
     <div class="explain" id="attExplain"></div>
+    <div id="qkv"></div>
   </div>
   <p>Rows are the character doing the looking; columns are the characters it can look at. Choose a row to see what that position pays attention to and what it predicts comes next. <span id="attNote">Right now the model is untrained, so the pattern is noise. Come back after step 6.</span></p>
 </section>
@@ -316,7 +326,8 @@ footer.foot p{margin:0 0 6px}
 
 <section class="step" id="s-learned">
   <h2><span class="n">7</span>What attention learned</h2>
-  <p class="lede">The same sentence, before and after training. Look for structure: a bright diagonal just left of the main one means “look at the previous character”, which is how the model learns that <span style="font-family:var(--mono)">q</span> is followed by <span style="font-family:var(--mono)">u</span>.</p>
+  <p class="lede">The same sentence, before and after training. Look for structure: a bright diagonal just left of the main one means “look at the previous character”, which is how the model learns that <span style="font-family:var(--mono)">q</span> is followed by <span style="font-family:var(--mono)">u</span><span data-i18n="tail-qu">.</span></p>
+  <p class="msg">This model has one layer and one attention head, so expect it to look mostly at nearby characters. But also look for rows that reach back to the start of a word or a sentence: that is how it tells a name from the middle of a word. Large models have dozens of layers and heads, and build much longer-range connections.</p>
   <div class="two">
     <div class="panel"><h3>Before training</h3><div class="scroll"><div class="heat" id="heatBefore"></div></div></div>
     <div class="panel"><h3 id="nowTitle">Now</h3><div class="scroll"><div class="heat" id="heatNow"></div></div></div>
@@ -338,7 +349,7 @@ footer.foot p{margin:0 0 6px}
     <label class="msg" for="prompt">Start the text with</label>
     <input type="text" id="prompt" style="margin:6px 0 14px">
     <div class="ctl"><label for="temp">Temperature</label><input type="range" id="temp" min="0.1" max="2" step="0.05" value="0.8"><b id="tempV" style="font-variant-numeric:tabular-nums">0.80</b></div>
-    <div class="row" style="margin-top:14px"><button class="primary" id="genBtn">Generate 300 characters</button><span class="spacer"></span><button class="copyinline" aria-label="Copy all results as text, to paste into an AI chat" title="Copy all results as text, to paste into an AI chat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div>
+    <div class="row" style="margin-top:14px"><button class="primary" id="genBtn">Generate 300 characters</button></div>
     <div class="gen" id="genOut" style="margin-top:16px"></div>
   </div>
   <div class="panel">
@@ -347,7 +358,7 @@ footer.foot p{margin:0 0 6px}
   </div>
 </section>
 <footer class="foot">
-  <p><b>Elakin</b> v1.2 · by Şenol Gülgönül · <a href="https://github.com/senolgulgonul/elakin">Source on GitHub</a> · MIT License</p>
+  <p><b>Elakin</b> v1.3 · by Şenol Gülgönül · <a href="https://github.com/senolgulgonul/elakin">Source on GitHub</a> · MIT License</p>
   <p>The Turkish sample text uses only the letters e, l, a, k, i, n and every sentence appears once: in our experiments, that kind of text taught the model best (see <a href="https://github.com/senolgulgonul/elakin/tree/main/experiments">experiments</a>). Everything runs in your browser; your text is never uploaded.</p>
 </footer>
 </main>
@@ -587,6 +598,131 @@ footer.foot p{margin:0 0 6px}
   if (typeof module !== 'undefined') module.exports = TinyGPT; else root.TinyGPT = TinyGPT;
 })(this);
 </script><script>
+// English → Turkish. Keys are exact text nodes of the page or exact fragments used by the scripts.
+const I18N = {
+  'Your text': 'Metniniz',
+  'Tokens': 'Tokenlar',
+  'Vocabulary': 'Sözlük',
+  'Embeddings': 'Embedding’ler',
+  'Attention': 'Attention',
+  'Training': 'Eğitim',
+  'What it learned': 'Ne öğrendi',
+  'Generate': 'Üret',
+  'Everything runs in your browser. Your text never leaves this page.': 'Her şey tarayıcınızda çalışır. Metniniz bu sayfadan hiç çıkmaz.',
+  'Train a tiny language model on your own text, and watch every step.': 'Kendi metninizle küçük bir dil modeli eğitin ve her adımı izleyin.',
+  'Large language models are built from the same pieces you’ll see here: tokens, embeddings, attention and a training loop that nudges millions of numbers. This one has': 'Büyük dil modelleri, burada göreceğiniz parçalardan yapılır: tokenlar, embedding’ler, attention ve milyonlarca sayıyı azar azar ayarlayan bir eğitim döngüsü. Bu modelde bu sayılardan',
+  'of them, small enough to look at.': 'tane var; içine bakılabilecek kadar küçük.',
+  'The name comes from': 'İsim şuradan geliyor:',
+  ': the first six letters Turkish children learn to read. The Turkish sample text uses only those letters.': '. İlk okuma-yazmada öğretilen ilk altı harf. Türkçe örnek metin yalnızca bu harfleri kullanıyor.',
+  'The model will learn only from what you give it. A few pages of plain text in any language is plenty; more text gives better results but trains more slowly. The last 10% is kept aside to test the model on text it hasn’t seen.': 'Model yalnızca ona verdiğiniz metinden öğrenir. Herhangi bir dilde birkaç sayfa düz metin yeter; daha uzun metin daha iyi sonuç verir ama daha yavaş eğitilir. Son %10, modeli hiç görmediği metinle sınamak için ayrılır.',
+  'Load a .txt file': '.txt dosyası yükle',
+  'Turkish primer (e l a k i n)': 'Türkçe ilk okuma (e l a k i n)',
+  'English story': 'İngilizce hikâye',
+  'Lowercase everything': 'Hepsini küçük harfe çevir',
+  'A model can’t read letters. First the text is cut into pieces called tokens. Different models cut differently, and the choice matters: fewer, bigger tokens let a model see more text at once.': 'Model harf okuyamaz. Önce metin, token denen parçalara bölünür. Farklı modeller farklı böler ve bu seçim önemlidir: daha az ve daha büyük token, modelin bir seferde daha fazla metin görmesini sağlar.',
+  'Text to inspect. Steps 3 to 7 use its first 24 characters.': 'İncelenecek metin. 3–7. adımlar ilk 24 karakterini kullanır.',
+  'Characters (this model)': 'Karakterler (bu model)',
+  'BPE trained on your text': 'Metninizle eğitilen BPE',
+  'The whole text, cut five ways': 'Metnin tamamı, beş farklı bölme',
+  'The GPT-2 tokenizer here uses the same vocabulary as Hugging Face’s': 'Buradaki GPT-2 tokenizer’ı, Hugging Face’in',
+  'tokenizer. Rare words and other languages break into many small pieces.': 'tokenizer’ıyla aynı sözlüğü kullanır. Nadir kelimeler ve diğer diller çok sayıda küçük parçaya bölünür.',
+  'Our model uses the simplest tokenizer: one token per character. Every distinct character gets an ID number, and the text becomes a long list of numbers.': 'Modelimiz en basit tokenizer’ı kullanır: her karakter bir token. Her farklı karakter bir ID numarası alır ve metin uzun bir sayı listesine dönüşür.',
+  'Your sentence as numbers': 'Cümleniz sayı olarak',
+  'An ID is just a label, so each one is swapped for a row of 32 numbers called an embedding. A second row says where the token sits in the sentence. The two are added together. Before training these numbers are random; training gives them meaning.': 'ID yalnızca bir etikettir; bu yüzden her biri, embedding denen 32 sayılık bir satırla değiştirilir. İkinci bir satır, token’ın cümlenin neresinde olduğunu söyler. İkisi toplanır. Eğitimden önce bu sayılar rastgeledir; anlamlarını eğitim verir.',
+  'Token': 'Token',
+  'Position': 'Konum',
+  'Token + position': 'Token + konum',
+  'negative': 'negatif',
+  'positive': 'pozitif',
+  'Each row is one character. The 32 columns are the 32 numbers of its embedding, not positions in the sentence.': 'Her satır bir karakter. 32 sütun, cümledeki konumlar değil, embedding’in 32 sayısıdır.',
+  'Attention lets each character gather information from the characters before it. Every position makes a query (what am I looking for?), a key (what do I contain?) and a value (what do I pass on?). Queries are compared with keys to decide how much of each value to take.': 'Attention, her karakterin kendinden önceki karakterlerden bilgi toplamasını sağlar. Her konum bir query (ne arıyorum?), bir key (bende ne var?) ve bir value (ne aktarırım?) üretir. Her value’dan ne kadar alınacağına, query’ler key’lerle karşılaştırılarak karar verilir.',
+  'weights = softmax( Q · Kᵀ / √32 ), with future positions hidden': 'ağırlıklar = softmax( Q · Kᵀ / √32 ), gelecek konumlar gizli',
+  '1. Scores': '1. Puanlar',
+  '2. Hide the future': '2. Geleceği gizle',
+  '3. Softmax weights': '3. Softmax ağırlıkları',
+  'Rows are the character doing the looking; columns are the characters it can look at. Choose a row to see what that position pays attention to and what it predicts comes next.': 'Satırlar bakan karakter, sütunlar bakılabilen karakterlerdir. Bir satır seçince o konumun neye dikkat ettiğini ve sonra ne beklediğini görürsünüz.',
+  'Right now the model is untrained, so the pattern is noise. Come back after step 6.': 'Şu anda model eğitilmemiş, bu yüzden desen gürültüden ibaret. 6. adımdan sonra geri gelin.',
+  'Training shows the model random 32-character windows of your text. At every position it guesses the next character. The loss measures how surprised it was by the right answer. After each batch, every number in the model moves a little in the direction that would have made the loss smaller.': 'Eğitim, modele metninizden rastgele 32 karakterlik pencereler gösterir. Model her konumda sonraki karakteri tahmin eder. Kayıp, doğru cevaba ne kadar şaşırdığını ölçer. Her batch’ten sonra modeldeki her sayı, kaybı küçültecek yönde biraz kayar.',
+  'Start training': 'Eğitimi başlat',
+  'Reset model': 'Modeli sıfırla',
+  'Learning rate': 'Öğrenme oranı',
+  'steps': 'adım',
+  'training loss': 'eğitim kaybı',
+  'held-out loss': 'ayrılmış metin kaybı',
+  'characters seen': 'görülen karakter',
+  'parameters': 'parametre',
+  'Training pauses by itself at 500, 1,000 and 2,000 steps so you can look around. If the held-out loss starts rising while the training loss keeps falling, the model is memorising rather than learning.': 'Eğitim, etrafa bakabilmeniz için 500, 1.000 ve 2.000. adımlarda kendiliğinden durur. Eğitim kaybı düşmeye devam ederken ayrılmış metin kaybı yükselmeye başlarsa, model öğrenmek yerine ezberliyor demektir.',
+  'held-out loss (last 10% of the text)': 'ayrılmış metin kaybı (metnin son %10’u)',
+  'random guessing': 'rastgele tahmin',
+  'knowing letter frequencies only': 'yalnızca harf sıklıklarını bilmek',
+  'What the model writes as it learns': 'Model öğrenirken ne yazıyor',
+  'Start training to see samples.': 'Örnekleri görmek için eğitimi başlatın.',
+  'What attention learned': 'Attention ne öğrendi',
+  'The same sentence, before and after training. Look for structure: a bright diagonal just left of the main one means “look at the previous character”, which is how the model learns that': 'Aynı cümle, eğitimden önce ve sonra. Yapıya bakın: ana köşegenin hemen solundaki parlak bir köşegen “bir önceki karaktere bak” demektir; modelin',
+  'is followed by': 'harfinden sonra',
+  'tail-qu': ' geldiğini öğrenmesi böyle olur.',
+  'This model has one layer and one attention head, so expect it to look mostly at nearby characters. But also look for rows that reach back to the start of a word or a sentence: that is how it tells a name from the middle of a word. Large models have dozens of layers and heads, and build much longer-range connections.': 'Bu modelin tek katmanı ve tek attention başlığı var; bu yüzden çoğunlukla yakın karakterlere bakmasını bekleyin. Ama bir kelimenin ya da cümlenin başına uzanan satırları da arayın: bir ismi kelimenin ortasından böyle ayırt ediyor. Büyük modellerde onlarca katman ve başlık vardır ve çok daha uzak bağlantılar kurarlar.',
+  'Before training': 'Eğitimden önce',
+  'Now': 'Şimdi',
+  'How far back does it look?': 'Ne kadar geriye bakıyor?',
+  'Average attention weight by distance, measured over many windows of your text.': 'Mesafeye göre ortalama attention ağırlığı; metninizin birçok penceresi üzerinden ölçüldü.',
+  'Before': 'Önce',
+  'To write, the model predicts odds for the next character, picks one, adds it to the text and repeats. Temperature reshapes the odds: low is safe and repetitive, high is surprising and messy.': 'Yazmak için model sonraki karakterin olasılıklarını tahmin eder, birini seçer, metne ekler ve tekrarlar. Sıcaklık bu olasılıkları yeniden şekillendirir: düşük sıcaklık güvenli ama tekrarlı, yüksek sıcaklık şaşırtıcı ama dağınık.',
+  'Start the text with': 'Metin şununla başlasın',
+  'Temperature': 'Sıcaklık',
+  'Generate 300 characters': '300 karakter üret',
+  'Odds for the next character': 'Sonraki karakterin olasılıkları',
+  'The Turkish sample text uses only the letters e, l, a, k, i, n and every sentence appears once: in our experiments, that kind of text taught the model best (see': 'Türkçe örnek metin yalnızca e, l, a, k, i, n harflerini kullanır ve her cümle bir kez geçer: deneylerimizde modele en iyi öğreten metin türü buydu (bkz.',
+  'experiments': 'deneyler',
+  '). Everything runs in your browser; your text is never uploaded.': '). Her şey tarayıcınızda çalışır; metniniz hiçbir yere gönderilmez.',
+  'Your browser blocked copying. Select all of this text and copy it yourself:': 'Tarayıcınız kopyalamayı engelledi. Bu metnin tamamını seçip kendiniz kopyalayın:',
+  'Close': 'Kapat',
+  'Source on GitHub': 'Kaynak kodu GitHub’da',
+  // dynamic fragments
+  'characters': 'karakter', 'words': 'kelime', 'different characters': 'farklı karakter', 'lines': 'satır',
+  'Add at least 300 characters so the model has something to learn from.': 'Modelin öğrenecek bir şeyi olması için en az 300 karakter ekleyin.',
+  'Cleaning removed': 'Temizleme', 'extra spaces and blank lines.': 'fazla boşluk ve boş satırı kaldırdı.',
+  'The text is clean. Nothing needed removing.': 'Metin temiz. Kaldırılacak bir şey yoktu.',
+  'That file is over 3 MB. Use a shorter excerpt; this model can’t use that much text anyway.': 'Bu dosya 3 MB’tan büyük. Daha kısa bir bölüm kullanın; bu model zaten o kadar metni kullanamaz.',
+  'tokens. Every character is its own token, so the vocabulary is tiny (': 'token. Her karakter kendi başına bir token; bu yüzden sözlük küçük (',
+  'entries, including ¤ for anything unknown) but sentences become long. That’s why this model is easy to build but can only see 32 characters at a time.': 'giriş, bilinmeyenler için ¤ dahil) ama cümleler uzuyor. Bu modelin kurulması kolay ama bir seferde yalnızca 32 karakter görmesinin sebebi bu.',
+  'Merges': 'Birleştirme',
+  'tokens. Byte-pair encoding starts from characters and repeatedly glues together the pair that appears most often in your text. Drag the slider to replay it.': 'token. Byte-pair encoding karakterlerden başlar ve metninizde en sık geçen çifti tekrar tekrar birleştirir. Kaydırıcıyı sürükleyerek yeniden izleyin.',
+  'No merges yet: every character is separate.': 'Henüz birleştirme yok: her karakter ayrı.',
+  'Loading the': 'Yükleniyor:', 'tokenizer': 'tokenizer’ı',
+  'tokens from a vocabulary of': 'token;', 'Common words are a single token, often with the space in front of them included.': 'tokenlık sözlükten. Sık kelimeler tek token olur, çoğu zaman önündeki boşlukla birlikte.',
+  'tokenizer couldn’t be downloaded. Check your connection, then choose the tab again.': 'tokenizer’ı indirilemedi. Bağlantınızı kontrol edip sekmeyi yeniden seçin.',
+  'Tokenizer': 'Tokenizer', 'Chars per token': 'Token başına karakter', 'Open the': 'Yüklemek için', 'tab to load it': 'sekmesini açın',
+  'Characters': 'Karakterler', 'merges': 'birleştirme',
+  'characters, with ID and how often each appears': 'karakter; ID’si ve kaç kez geçtiğiyle',
+  'Stands in for any character that isn’t in your text': 'Metninizde olmayan her karakterin yerine geçer',
+  'appears': 'kez geçiyor', 'times': '',
+  'Not in your text, so it becomes ¤': 'Metninizde yok, bu yüzden ¤ oluyor',
+  'The model has started training, so these weights now reflect what it learned. Compare with the untrained version in step 7.': 'Model eğitilmeye başladı; bu ağırlıklar artık öğrendiklerini yansıtıyor. 7. adımda eğitilmemiş sürümle karşılaştırın.',
+  'after': '', 'training steps': 'eğitim adımından sonra', 'untrained': 'eğitilmemiş',
+  'query and key disagree': 'query ile key uyuşmuyor', 'query and key match': 'query ile key uyuşuyor',
+  'future character, hidden so the model can’t peek at the answer': 'gelecek karakter; model cevaba bakamasın diye gizli',
+  'more attention': 'daha fazla attention', 'Each row adds up to 100%.': 'Her satırın toplamı %100.',
+  'Choose any square to inspect its row.': 'Satırını incelemek için herhangi bir kareye tıklayın.',
+  'Reading': 'Okunan:', 'at position': ', konum', 'it looks most at': '; en çok şunlara bakıyor:', 'position': 'konum',
+  'It predicts the next character is': 'Sonraki karakter tahmini:', 'The real next character:': 'Gerçek sonraki karakter:',
+  'After': '', 'steps ': ' adım sonra', 'Now (not trained yet)': 'Şimdi (henüz eğitilmedi)',
+  'Paused at': 'Duraklatıldı:', 'steps. Look at steps 5, 7 and 8, then come back and continue.': 'adım. 5, 7 ve 8. adımlara bakıp sonra geri gelin ve devam edin.',
+  'From here it keeps going until you pause it.': 'Bundan sonra siz durdurana kadar devam eder.',
+  'Pause training': 'Eğitimi duraklat', 'Training…': 'Eğitiliyor…', 'Continue training': 'Eğitime devam et',
+  'Step': 'Adım',
+  'Odds for the character after': 'Şundan sonraki karakterin olasılıkları:',
+  'Copied. Paste it into an AI chat.': 'Kopyalandı. Bir yapay zekâ sohbetine yapıştırın.',
+  'Copy all results as text, to paste into an AI chat': 'Tüm sonuçları metin olarak kopyala; bir yapay zekâ sohbetine yapıştırmak için',
+  // QKV box
+  'How this row is computed': 'Bu satır nasıl hesaplanıyor',
+  'The query of the selected character is compared with the key of every character it can see. Each vector has 32 numbers; the strips show them (pink negative, green positive).': 'Seçili karakterin query’si, görebildiği her karakterin key’iyle karşılaştırılıyor. Her vektörde 32 sayı var; şeritler onları gösteriyor (pembe negatif, yeşil pozitif).',
+  'query of': 'query’si:', 'key': 'key', 'score = Q · K': 'puan = Q · K', '/ √32': '/ √32', 'softmax': 'softmax',
+  'The weights then mix the value vectors: output = Σ weight × V. That mixed vector goes through the MLP and becomes the prediction above.': 'Ağırlıklar sonra value vektörlerini karıştırır: çıktı = Σ ağırlık × V. Bu karışım MLP’den geçer ve yukarıdaki tahmine dönüşür.',
+  'Q = (embedding + position) × W_Q, K = (embedding + position) × W_K, V = (embedding + position) × W_V. The three W matrices are 32 × 32 and are learned during training.': 'Q = (embedding + konum) × W_Q, K = (embedding + konum) × W_K, V = (embedding + konum) × W_V. Üç W matrisi 32 × 32 boyutunda ve eğitim sırasında öğreniliyor.'
+};
+let LANG = 'en';
+const t = (s) => (LANG === 'tr' && I18N[s] !== undefined ? I18N[s] : s);
 const SAMPLES = {
   tr: { text: `Lale, kanala in.
 Kenan elle kil al.
@@ -833,7 +969,7 @@ function chipHTML(pieces) {
   }).join('<wbr>');
 }
 function focusChars() { return [...state.focus].slice(0, 24); }
-function fmt(n) { return n.toLocaleString('en-US'); }
+function fmt(n) { return n.toLocaleString(LANG === 'tr' ? 'tr-TR' : 'en-US'); }
 function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
 
 /* ---------- step 1: text ---------- */
@@ -848,13 +984,9 @@ function setText(raw) {
   state.text = t;
   const words = (t.match(/\S+/g) || []).length;
   const uniq = new Set(t).size;
-  $('textStats').innerHTML = `<span><b>${fmt(t.length)}</b> characters</span><span><b>${fmt(words)}</b> words</span><span><b>${uniq}</b> different characters</span><span><b>${fmt(t.split('\n').length)}</b> lines</span>`;
-  if (t.length < 300) {
-    $('textMsg').innerHTML = '<span class="warn">Add at least 300 characters so the model has something to learn from.</span>';
-    return false;
-  }
-  const removed = raw.length - t.length;
-  $('textMsg').textContent = removed > 0 ? `Cleaning removed ${fmt(removed)} extra spaces and blank lines.` : 'The text is clean. Nothing needed removing.';
+  state.stats = { chars: t.length, words, uniq, lines: t.split('\n').length, removed: raw.length - t.length };
+  renderTextStats();
+  if (t.length < 300) return false;
   buildAll();
   return true;
 }
@@ -897,6 +1029,12 @@ function valLoss(model) {
 }
 function encode(s) { return Int32Array.from([...s].map(enc1)); }
 
+function renderTextStats() {
+  const st = state.stats; if (!st) return;
+  $('textStats').innerHTML = `<span><b>${fmt(st.chars)}</b> ${t('characters')}</span><span><b>${fmt(st.words)}</b> ${t('words')}</span><span><b>${st.uniq}</b> ${t('different characters')}</span><span><b>${fmt(st.lines)}</b> ${t('lines')}</span>`;
+  if (st.chars < 300) { $('textMsg').innerHTML = `<span class="warn">${t('Add at least 300 characters so the model has something to learn from.')}</span>`; return; }
+  $('textMsg').textContent = st.removed > 0 ? `${t('Cleaning removed')} ${fmt(st.removed)} ${t('extra spaces and blank lines.')}` : t('The text is clean. Nothing needed removing.');
+}
 function buildModel() {
   stopTraining();
   const cfg = { V: state.chars.length, T: CFG.T, d: CFG.d, f: CFG.f, seed: 1234 };
@@ -905,7 +1043,7 @@ function buildModel() {
   state.step = 0; state.seen = 0; state.losses = []; state.evals = []; state.samples = []; state.hist = [];
   state.rng = TinyGPT.mulberry32(7); state.sampleRng = TinyGPT.mulberry32(11); ema = null;
   state.evals.push([0, valLoss(state.model)]);
-  $('trainMsg').textContent = 'Training pauses by itself at 500, 1,000 and 2,000 steps so you can look around. If the held-out loss starts rising while the training loss keeps falling, the model is memorising rather than learning.';
+  state.trainMsg = null; renderTrainMsg();
   let n = 0; for (const k in state.model.p) n += state.model.p[k].length;
   $('kParams').textContent = fmt(n); $('heroParams').textContent = fmt(n);
   state.off0 = offsets(state.model0);
@@ -1008,34 +1146,34 @@ function gptPieces(tok, s) {
 async function renderTokens() {
   const s = state.focus || '';
   const box = $('tokBody');
-  const t = state.tokTab;
-  if (t === 'char') {
+  const tab = state.tokTab;
+  if (tab === 'char') {
     box.innerHTML = `<div class="chips">${chipHTML([...s])}</div>
-      <p class="msg"><b>${[...s].length}</b> tokens. Every character is its own token, so the vocabulary is tiny (${state.chars.length} entries, including ¤ for anything unknown) but sentences become long. That’s why this model is easy to build but can only see 32 characters at a time.</p>`;
-  } else if (t === 'bpe') {
+      <p class="msg"><b>${[...s].length}</b> ${t('tokens. Every character is its own token, so the vocabulary is tiny (')}${state.chars.length} ${t('entries, including ¤ for anything unknown) but sentences become long. That’s why this model is easy to build but can only see 32 characters at a time.')}</p>`;
+  } else if (tab === 'bpe') {
     if (!state.bpe) trainBPE();
     const k = state.bpeK;
     const pieces = bpeEncode(s, k);
     const shown = state.bpe.slice(0, k).map(([a, b], i) => `<span class="${i === k - 1 ? 'last' : ''}">${esc(showCh2(a))} + ${esc(showCh2(b))}</span>`).join('');
-    box.innerHTML = `<div class="ctl"><label for="bpeK">Merges</label><input type="range" id="bpeK" min="0" max="${state.bpe.length}" value="${k}"><b style="font-variant-numeric:tabular-nums">${k}</b></div>
+    box.innerHTML = `<div class="ctl"><label for="bpeK">${t('Merges')}</label><input type="range" id="bpeK" min="0" max="${state.bpe.length}" value="${k}"><b style="font-variant-numeric:tabular-nums">${k}</b></div>
       <div class="chips" style="margin-top:12px">${chipHTML(pieces)}</div>
-      <p class="msg"><b>${pieces.length}</b> tokens. Byte-pair encoding starts from characters and repeatedly glues together the pair that appears most often in your text. Drag the slider to replay it.</p>
-      <div class="merges">${shown || '<span>No merges yet: every character is separate.</span>'}</div>`;
+      <p class="msg"><b>${pieces.length}</b> ${t('tokens. Byte-pair encoding starts from characters and repeatedly glues together the pair that appears most often in your text. Drag the slider to replay it.')}</p>
+      <div class="merges">${shown || `<span>${t('No merges yet: every character is separate.')}</span>`}</div>`;
     $('bpeK').addEventListener('input', (e) => { state.bpeK = +e.target.value; renderTokens(); });
   } else {
-    const g = GPT[t];
-    if (!state.gptReady || !state.gptReady[t]) box.innerHTML = `<p class="msg">Loading the ${g.name} tokenizer (${g.size})…</p>`;
+    const g = GPT[tab];
+    if (!state.gptReady || !state.gptReady[tab]) box.innerHTML = `<p class="msg">${t('Loading the')} ${g.name} ${t('tokenizer')} (${g.size})…</p>`;
     try {
-      const tok = await loadGPT(t);
-      (state.gptReady = state.gptReady || {})[t] = true;
-      if (state.tokTab !== t) return;
+      const tok = await loadGPT(tab);
+      (state.gptReady = state.gptReady || {})[tab] = true;
+      if (state.tokTab !== tab) return;
       const { ids, pieces } = gptPieces(tok, s);
       box.innerHTML = `<div class="chips">${chipHTML(pieces)}</div>
         <div class="ids" style="margin-top:10px">${ids.map(i => `<span>${i}</span>`).join('')}</div>
-        <p class="msg"><b>${ids.length}</b> tokens from a vocabulary of ${g.vocab}. Common words are a single token, often with the space in front of them included.</p>`;
+        <p class="msg"><b>${ids.length}</b> ${t('tokens from a vocabulary of')} ${g.vocab}${LANG === 'tr' ? ' ' : '. '}${t('Common words are a single token, often with the space in front of them included.')}</p>`;
       renderTokCompare();
     } catch (e) {
-      box.innerHTML = `<p class="msg warn">The ${g.name} tokenizer couldn’t be downloaded. Check your connection, then choose the tab again.</p>`;
+      box.innerHTML = `<p class="msg warn">${g.name} ${t('tokenizer couldn’t be downloaded. Check your connection, then choose the tab again.')}</p>`;
     }
   }
 }
@@ -1043,39 +1181,39 @@ function showCh2(c) { return c.replace(/ /g, '·').replace(/\n/g, '↵'); }
 
 let cmpCache = {};
 async function renderTokCompare() {
-  const t = state.text; if (!t) return;
+  const txt = state.text; if (!txt) return;
   if (!state.bpe) trainBPE();
-  const key = t.length + ':' + t.slice(0, 50);
+  const key = txt.length + ':' + txt.slice(0, 50);
   if (cmpCache.key !== key) cmpCache = { key };
-  if (cmpCache.bpe == null) cmpCache.bpe = bpeEncode(t.slice(0, 40000), state.bpe.length).length * (t.length / Math.min(t.length, 40000));
+  if (cmpCache.bpe == null) cmpCache.bpe = bpeEncode(txt.slice(0, 40000), state.bpe.length).length * (txt.length / Math.min(txt.length, 40000));
   cmpCache.rows = null;
-  const rows = [['Characters', t.length, String(state.chars.length)], ['BPE, ' + state.bpe.length + ' merges', Math.round(cmpCache.bpe), String(new Set([...state.chars, ...state.bpe.map(m => m[0] + m[1])]).size)]];
+  const rows = [[t('Characters'), txt.length, String(state.chars.length)], ['BPE, ' + state.bpe.length + ' ' + t('merges'), Math.round(cmpCache.bpe), String(new Set([...state.chars, ...state.bpe.map(m => m[0] + m[1])]).size)]];
   for (const k of ['gpt2', 'gpt4', 'gpt4o']) {
     const p = state.gpt[k];
     if (p) {
       try {
         const tok = await p;
-        if (cmpCache[k] == null) cmpCache[k] = tok.encode(t).length;
+        if (cmpCache[k] == null) cmpCache[k] = tok.encode(txt).length;
         rows.push([GPT[k].name, cmpCache[k], GPT[k].vocab]);
       } catch (e) { rows.push([GPT[k].name, null, '']); }
     } else rows.push([GPT[k].name, null, '']);
   }
-  const max = t.length;
+  const max = txt.length;
   cmpCache.rows = rows;
-  $('tokCmp').innerHTML = `<tr><th>Tokenizer</th><th style="text-align:right">Tokens</th><th style="text-align:right">Chars per token</th><th style="width:30%"></th><th style="text-align:right">Vocabulary</th></tr>` +
+  $('tokCmp').innerHTML = `<tr><th>${t('Tokenizer')}</th><th style="text-align:right">${t('Tokens')}</th><th style="text-align:right">${t('Chars per token')}</th><th style="width:30%"></th><th style="text-align:right">${t('Vocabulary')}</th></tr>` +
     rows.map(([n, c, v]) => c == null
-      ? `<tr><td>${n}</td><td class="num msg" colspan="3">Open the ${n} tab to load it</td><td class="num">${v}</td></tr>`
-      : `<tr><td>${n}</td><td class="num">${fmt(c)}</td><td class="num">${(t.length / c).toFixed(2)}</td><td><span class="bar" style="width:${(c / max * 100).toFixed(1)}%"></span></td><td class="num">${v}</td></tr>`).join('');
+      ? `<tr><td>${n}</td><td class="num msg" colspan="3">${t('Open the')} ${n} ${t('tab to load it')}</td><td class="num">${v}</td></tr>`
+      : `<tr><td>${n}</td><td class="num">${fmt(c)}</td><td class="num">${(txt.length / c).toFixed(2)}</td><td><span class="bar" style="width:${(c / max * 100).toFixed(1)}%"></span></td><td class="num">${v}</td></tr>`).join('');
 }
 
 /* ---------- step 3: vocab ---------- */
 function renderVocab() {
   const max = Math.max(...state.counts);
-  $('vocabTitle').textContent = `${state.chars.length} characters, with ID and how often each appears`;
+  $('vocabTitle').textContent = `${state.chars.length} ${t('characters, with ID and how often each appears')}`;
   $('vocab').innerHTML = state.chars.map((c, i) =>
-    `<div title="${c === UNK ? 'Stands in for any character that isn’t in your text' : '“' + showCh(c) + '” appears ' + fmt(state.counts[i]) + ' times'}"><b>${esc(showCh(c))}</b><i>${i}</i><span style="width:${Math.max(4, state.counts[i] / max * 100)}%"></span></div>`).join('') ;
+    `<div title="${c === UNK ? t('Stands in for any character that isn’t in your text') : '“' + showCh(c) + '” ' + fmt(state.counts[i]) + ' ' + (LANG === 'tr' ? t('appears') : 'times')}"><b>${esc(showCh(c))}</b><i>${i}</i><span style="width:${Math.max(4, state.counts[i] / max * 100)}%"></span></div>`).join('') ;
   const s = focusChars();
-  $('ids').innerHTML = s.map(c => `<span class="${known(c) ? '' : 'unk'}" title="${known(c) ? '' : 'Not in your text, so it becomes ¤'}">${esc(showCh(c))}<small>${enc1(c)}</small></span>`).join('');
+  $('ids').innerHTML = s.map(c => `<span class="${known(c) ? '' : 'unk'}" title="${known(c) ? '' : t('Not in your text, so it becomes ¤')}">${esc(showCh(c))}<small>${enc1(c)}</small></span>`).join('');
 }
 
 /* ---------- heatmaps ---------- */
@@ -1132,24 +1270,46 @@ function renderAttn() {
   el.style.gridTemplateColumns = `auto repeat(${n}, var(--cw))`;
   el.style.setProperty('--cw', '20px'); el.style.setProperty('--ch', '20px');
   el.innerHTML = h;
-  $('attNote').textContent = state.step ? 'The model has started training, so these weights now reflect what it learned. Compare with the untrained version in step 7.' : 'Right now the model is untrained, so the pattern is noise. Come back after step 6.';
-  $('attStep').textContent = state.step ? `after ${fmt(state.step)} training steps` : 'untrained';
+  $('attNote').textContent = state.step ? t('The model has started training, so these weights now reflect what it learned. Compare with the untrained version in step 7.') : t('Right now the model is untrained, so the pattern is noise. Come back after step 6.');
+  $('attStep').textContent = state.step ? `${t('after')} ${fmt(state.step)} ${t('training steps')}`.trim() : t('untrained');
   const lg = {
-    raw: '<span><i style="background:rgb(var(--rose-rgb))"></i>query and key disagree</span><span><i style="background:rgb(var(--teal-rgb))"></i>query and key match</span>',
-    mask: '<span><i style="background:repeating-linear-gradient(45deg,var(--line) 0 2px,transparent 2px 5px)"></i>future character, hidden so the model can’t peek at the answer</span>',
-    soft: '<span><i style="background:rgb(var(--teal-rgb))"></i>more attention</span><span>Each row adds up to 100%.</span>'
+    raw: `<span><i style="background:rgb(var(--rose-rgb))"></i>${t('query and key disagree')}</span><span><i style="background:rgb(var(--teal-rgb))"></i>${t('query and key match')}</span>`,
+    mask: `<span><i style="background:repeating-linear-gradient(45deg,var(--line) 0 2px,transparent 2px 5px)"></i>${t('future character, hidden so the model can’t peek at the answer')}</span>`,
+    soft: `<span><i style="background:rgb(var(--teal-rgb))"></i>${t('more attention')}</span><span>${t('Each row adds up to 100%.')}</span>`
   };
   $('attLegend').innerHTML = lg[state.attView];
   const r = state.selRow >= 0 && state.selRow < n ? state.selRow : -1;
-  if (r < 0) { $('attExplain').innerHTML = '<span class="msg">Choose any square to inspect its row.</span>'; return; }
+  if (r < 0) { $('attExplain').innerHTML = `<span class="msg">${t('Choose any square to inspect its row.')}</span>`; $('qkv').innerHTML = ''; return; }
   const w = []; for (let j = 0; j <= r; j++) w.push([j, c.A[r * n + j]]);
   w.sort((a, b) => b[1] - a[1]);
   const V = state.chars.length, L = c.L.subarray(r * V, (r + 1) * V);
   const pr = softmax(L, 1); const top = [...pr].map((p, i) => [i, p]).sort((a, b) => b[1] - a[1]).slice(0, 3);
-  $('attExplain').innerHTML = `Reading <span class="k">${esc(showCh(s[r]))}</span> at position ${r}, it looks most at ` +
-    w.slice(0, 3).map(([j, p]) => `<span class="k">${esc(showCh(s[j]))}</span> (position ${j}, ${(p * 100).toFixed(0)}%)`).join(', ') +
-    `. It predicts the next character is ` + top.map(([i, p]) => `<span class="k">${esc(showCh(state.chars[i]))}</span> ${(p * 100).toFixed(0)}%`).join(', ') +
-    (r + 1 < n ? `. The real next character: <span class="k">${esc(showCh(s[r + 1]))}</span>` : '.');
+  $('attExplain').innerHTML = (LANG === 'tr' ? `Okunan: <span class="k">${esc(showCh(s[r]))}</span>, konum ${r}; en çok şunlara bakıyor: ` : `Reading <span class="k">${esc(showCh(s[r]))}</span> at position ${r}, it looks most at `) +
+    w.slice(0, 3).map(([j, p]) => `<span class="k">${esc(showCh(s[j]))}</span> (${t('position')} ${j}, ${(p * 100).toFixed(0)}%)`).join(', ') +
+    `. ${t('It predicts the next character is')} ` + top.map(([i, p]) => `<span class="k">${esc(showCh(state.chars[i]))}</span> ${(p * 100).toFixed(0)}%`).join(', ') +
+    (r + 1 < n ? `. ${t('The real next character:')} <span class="k">${esc(showCh(s[r + 1]))}</span>` : '.');
+  renderQKV(c, s, r);
+}
+function strip(vec, off, mx) {
+  let h = '<span class="strip">';
+  for (let j = 0; j < CFG.d; j++) h += `<i style="background:${divColor(vec[off + j], mx)}"></i>`;
+  return h + '</span>';
+}
+function renderQKV(c, s, r) {
+  const d = CFG.d, n = s.length, sc = 1 / Math.sqrt(d);
+  let mx = 0; for (let i = 0; i < n * d; i++) mx = Math.max(mx, Math.abs(c.Q[i]), Math.abs(c.K[i]));
+  const rows = [];
+  for (let j = 0; j <= r; j++) {
+    const raw = c.S[r * n + j] / sc;
+    rows.push(`<tr><td>${esc(showCh(s[j]))} @${j}</td><td>${strip(c.K, j * d, mx)}</td><td>${raw.toFixed(2)}</td><td>${c.S[r * n + j].toFixed(2)}</td><td><b>${(c.A[r * n + j] * 100).toFixed(1)}%</b></td></tr>`);
+  }
+  $('qkv').innerHTML = `<div class="qkv"><h4>${t('How this row is computed')}</h4>
+    <p class="msg" style="margin:0 0 8px">${t('The query of the selected character is compared with the key of every character it can see. Each vector has 32 numbers; the strips show them (pink negative, green positive).')}</p>
+    <div class="f">Q = (embedding + ${t('position')}) × W_Q, K = … × W_K, V = … × W_V</div>
+    <p class="msg" style="margin:6px 0 10px">${esc(showCh(s[r]))} @${r} ${t('query of')} ${strip(c.Q, r * d, mx)}</p>
+    <div class="scroll"><table><tr><th>${t('key')}</th><th></th><th>${t('score = Q · K')}</th><th>${t('/ √32')}</th><th>${t('softmax')}</th></tr>${rows.join('')}</table></div>
+    <p class="msg" style="margin:10px 0 0">${t('The weights then mix the value vectors: output = Σ weight × V. That mixed vector goes through the MLP and becomes the prediction above.')}</p>
+    <p class="msg" style="margin:6px 0 0">${t('Q = (embedding + position) × W_Q, K = (embedding + position) × W_K, V = (embedding + position) × W_V. The three W matrices are 32 × 32 and are learned during training.')}</p></div>`;
 }
 function softmax(L, temp) {
   const o = new Float32Array(L.length); let m = -Infinity;
@@ -1185,7 +1345,7 @@ function renderLearned() {
     el.style.setProperty('--cw', '12px'); el.style.setProperty('--ch', '12px');
     el.innerHTML = h;
   }
-  $('nowTitle').textContent = state.step ? `After ${fmt(state.step)} steps` : 'Now (not trained yet)';
+  $('nowTitle').textContent = state.step ? (LANG === 'tr' ? `${fmt(state.step)} adım sonra` : `After ${fmt(state.step)} steps`) : t('Now (not trained yet)');
   $('offBefore').innerHTML = offHTML(state.off0);
   $('offNow').innerHTML = offHTML(offsets(state.model));
 }
@@ -1219,7 +1379,7 @@ function trainLoop() {
   if (pause) {
     updateKpis(); drawChart(); stopTraining();
     renderAttn(); renderEmbed();
-    $('trainMsg').textContent = `Paused at ${fmt(state.step)} steps. Look at steps 5, 7 and 8, then come back and continue.` + (state.step === 2000 ? ' From here it keeps going until you pause it.' : '');
+    state.trainMsg = 'paused'; renderTrainMsg();
     return;
   }
   updateKpis(); drawChart();
@@ -1229,14 +1389,20 @@ function trainLoop() {
 function visible(id) { const r = $(id).getBoundingClientRect(); return r.bottom > 0 && r.top < innerHeight; }
 function startTraining() {
   if (!state.model || state.ids.length < CFG.T + 2) return;
-  state.running = true; $('trainBtn').textContent = 'Pause training';
+  state.running = true; $('trainBtn').textContent = t('Pause training');
   if (state.step === 0) { ema = null; state.samples = []; addSample(); }
-  $('trainMsg').textContent = 'Training…';
+  state.trainMsg = 'running'; renderTrainMsg();
   requestAnimationFrame(trainLoop);
 }
 function stopTraining() {
   if (state.running) { state.running = false; renderLearned(); renderProbs(); }
-  $('trainBtn').textContent = state.step ? 'Continue training' : 'Start training';
+  $('trainBtn').textContent = state.step ? t('Continue training') : t('Start training');
+}
+function renderTrainMsg() {
+  const m = state.trainMsg;
+  $('trainMsg').textContent = m === 'running' ? t('Training…')
+    : m === 'paused' ? `${t('Paused at')} ${fmt(state.step)} ${t('steps. Look at steps 5, 7 and 8, then come back and continue.')}` + (state.step === 2000 ? ' ' + t('From here it keeps going until you pause it.') : '')
+    : t('Training pauses by itself at 500, 1,000 and 2,000 steps so you can look around. If the held-out loss starts rising while the training loss keeps falling, the model is memorising rather than learning.');
 }
 function addSample() {
   const seed = state.text.slice(0, 1);
@@ -1247,8 +1413,8 @@ function addSample() {
   renderSamples();
 }
 function renderSamples() {
-  if (!state.samples.length) { $('samples').innerHTML = '<li><small>Start training to see samples.</small></li>'; return; }
-  $('samples').innerHTML = state.samples.map(([st, t]) => `<li><small>Step ${fmt(st)}</small>${esc(t)}</li>`).join('');
+  if (!state.samples.length) { $('samples').innerHTML = `<li><small>${t('Start training to see samples.')}</small></li>`; return; }
+  $('samples').innerHTML = state.samples.map(([st, tx]) => `<li><small>${t('Step')} ${fmt(st)}</small>${esc(tx)}</li>`).join('');
 }
 function drawChart() {
   const cv = $('chart'), dpr = devicePixelRatio || 1;
@@ -1294,7 +1460,7 @@ function renderProbs() {
   const pr = $('prompt').value || ' ', temp = +$('temp').value;
   const p = state.model.nextProbs(encode(pr.slice(-CFG.T)), temp);
   const top = [...p].map((v, i) => [i, v]).sort((a, b) => b[1] - a[1]).slice(0, 8);
-  $('probTitle').textContent = `Odds for the character after “${pr.slice(-16)}”`;
+  $('probTitle').textContent = `${t('Odds for the character after')} “${pr.slice(-16)}”`;
   $('probs').innerHTML = top.map(([i, v]) => `<b>${esc(showCh(state.chars[i]))}</b><span class="bar" style="width:${Math.max(1, v * 100).toFixed(1)}%"></span><i>${(v * 100).toFixed(1)}%</i>`).join('');
 }
 
@@ -1304,7 +1470,7 @@ function pct(v) { return (v * 100).toFixed(1) + '%'; }
 function q(c) { return c === ' ' ? '␣(space)' : c === '\n' ? '↵(newline)' : c; }
 function buildReport() {
   const L = [];
-  L.push('These are results from Elakin (elakin v1.2), a web page that trains a small character-level Transformer in the browser. Please explain them to me: what the model learned, what the numbers mean, and anything surprising or worth trying next.');
+  L.push('These are results from Elakin (elakin v1.3), a web page that trains a small character-level Transformer in the browser. Please explain them to me: what the model learned, what the numbers mean, and anything surprising or worth trying next.');
   L.push('');
   let np = 0; for (const k in state.model.p) np += state.model.p[k].length;
   L.push('## Model', `One Transformer block (single attention head + MLP with ReLU, residual connections, no layer norm). Character-level tokens. Context ${CFG.T} characters, embedding size ${CFG.d}, MLP size ${CFG.f}, ${fmt(np)} parameters. Adam optimiser, learning rate ${$('lr').value}, batches of ${CFG.B} random windows.`, '');
@@ -1364,15 +1530,14 @@ function buildReport() {
 function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove('on'), 1800); }
 async function copyReport() {
   const txt = buildReport();
-  try { await navigator.clipboard.writeText(txt); toast('Copied. Paste it into an AI chat.'); return; } catch (e) {}
+  try { await navigator.clipboard.writeText(txt); toast(t('Copied. Paste it into an AI chat.')); return; } catch (e) {}
   const ta = document.createElement('textarea'); ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select();
   let ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
   ta.remove();
-  if (ok) { toast('Copied. Paste it into an AI chat.'); return; }
+  if (ok) { toast(t('Copied. Paste it into an AI chat.')); return; }
   $('copyTxt').value = txt; $('copyDlg').showModal(); $('copyTxt').select();
 }
 $('copyBtn').onclick = copyReport;
-document.querySelectorAll('.copyinline').forEach(b => b.onclick = copyReport);
 $('copyClose').onclick = () => $('copyDlg').close();
 
 /* ---------- wiring ---------- */
@@ -1384,7 +1549,7 @@ $('lower').onchange = () => setText($('txt').value);
 $('fileBtn').addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('file').click(); } });
 function readFile(f) {
   if (!f) return;
-  if (f.size > 3e6) { $('textMsg').innerHTML = '<span class="warn">That file is over 3 MB. Use a shorter excerpt; this model can’t use that much text anyway.</span>'; return; }
+  if (f.size > 3e6) { $('textMsg').innerHTML = `<span class="warn">${t('That file is over 3 MB. Use a shorter excerpt; this model can’t use that much text anyway.')}</span>`; return; }
   const r = new FileReader(); r.onload = () => { state.sampleKey = null; $('txt').value = r.result; setText(r.result); }; r.readAsText(f);
 }
 $('file').onchange = (e) => readFile(e.target.files[0]);
@@ -1439,6 +1604,28 @@ const io = new IntersectionObserver((ents) => {
 }, { rootMargin: '-40% 0px -55% 0px' });
 document.querySelectorAll('section.step').forEach(s => io.observe(s));
 
+// ---------- language ----------
+const TEXT_NODES = [];
+(function collect(node) {
+  for (const ch of node.childNodes) {
+    if (ch.nodeType === 3) { const v = ch.nodeValue, k = v.trim(); if (k && I18N[k] !== undefined) TEXT_NODES.push({ node: ch, en: k, lead: v.slice(0, v.indexOf(k)), trail: v.slice(v.indexOf(k) + k.length) }); }
+    else if (ch.nodeType === 1 && !['SCRIPT', 'STYLE', 'TEXTAREA'].includes(ch.tagName)) collect(ch);
+  }
+})(document.body);
+function applyLang(l) {
+  LANG = l; document.documentElement.lang = l;
+  for (const x of TEXT_NODES) x.node.nodeValue = x.lead + (l === 'tr' ? I18N[x.en] : x.en) + x.trail;
+  document.querySelectorAll('[data-i18n]').forEach(el => { if (!el.dataset.en) el.dataset.en = el.textContent; el.textContent = l === 'tr' ? I18N[el.dataset.i18n] : el.dataset.en; });
+  $('txt').placeholder = l === 'tr' ? $('txt').dataset.phTr : 'Paste text here, or drop a .txt file on this box.';
+  $('copyBtn').title = t('Copy all results as text, to paste into an AI chat'); $('copyBtn').setAttribute('aria-label', $('copyBtn').title);
+  [...$('langSeg').children].forEach(b => b.setAttribute('aria-pressed', b.dataset.l === l));
+  try { localStorage.setItem('elakin-lang', l); } catch (e) {}
+  if (state.model) { renderTextStats(); renderTokens(); renderTokCompare(); renderVocab(); renderAttn(); renderLearned(); renderProbs(); renderSamples(); renderTrainMsg(); if (!state.running) $('trainBtn').textContent = state.step ? t('Continue training') : t('Start training'); }
+}
+$('langSeg').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) applyLang(b.dataset.l); });
+let startLang = (navigator.language || '').toLowerCase().startsWith('tr') ? 'tr' : 'en';
+try { startLang = localStorage.getItem('elakin-lang') || startLang; } catch (e) {}
 $('lower').checked = false;
-useSample((navigator.language || '').toLowerCase().startsWith('tr') ? 'tr' : 'en');
+useSample(startLang === 'tr' ? 'tr' : 'en');
+applyLang(startLang);
 </script></body></html>
