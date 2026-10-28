@@ -1204,10 +1204,8 @@ function pct(v) { return (v * 100).toFixed(1) + '%'; }
 function q(c) { return c === ' ' ? '␣(space)' : c === '\n' ? '↵(newline)' : c; }
 function buildReport() {
   const L = [];
-  let lang = navigator.language || 'en';
-  try { lang = new Intl.DisplayNames(['en'], { type: 'language' }).of(lang); } catch (e) {}
   L.push('These are results from Elakin (elakin v1.0), a web page that trains a small character-level Transformer in the browser. Please explain them to me: what the model learned, what the numbers mean, and anything surprising or worth trying next.');
-  L.push(`Please answer in ${lang}.`, '');
+  L.push('');
   let np = 0; for (const k in state.model.p) np += state.model.p[k].length;
   L.push('## Model', `One Transformer block (single attention head + MLP with ReLU, residual connections, no layer norm). Character-level tokens. Context ${CFG.T} characters, embedding size ${CFG.d}, MLP size ${CFG.f}, ${fmt(np)} parameters. Adam optimiser, learning rate ${$('lr').value}, batches of ${CFG.B} random windows.`, '');
   const t = state.text;
