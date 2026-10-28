@@ -55,4 +55,4 @@ Elakin, büyük dil modellerinin nasıl çalıştığını, içine bakılabilece
 
 ---
 
-Elakin v1.0 · Şenol Gülgönül · MIT License
+Elakin v1.1 · Şenol Gülgönül · MIT License

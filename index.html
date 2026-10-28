@@ -176,7 +176,7 @@ footer.foot p{margin:0 0 6px}
 <body>
 <div class="layout">
 <nav class="rail" aria-label="Steps">
-  <h2>Elakin <span style="font-family:var(--mono);font-size:12px;color:var(--muted);font-weight:400">v1.0</span></h2>
+  <h2>Elakin <span style="font-family:var(--mono);font-size:12px;color:var(--muted);font-weight:400">v1.1</span></h2>
   <ol id="railList">
     <li><a href="#s-text"><span class="n">1</span>Your text</a></li>
     <li><a href="#s-tokens"><span class="n">2</span>Tokens</a></li>
@@ -192,7 +192,7 @@ footer.foot p{margin:0 0 6px}
 
 <main>
 <header class="hero">
-  <div class="brand"><b>Elakin</b><span>v1.0</span><span class="spacer" style="border:0;flex:1"></span><button class="copyinline" aria-label="Copy all results as text, to paste into an AI chat" title="Copy all results as text, to paste into an AI chat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div>
+  <div class="brand"><b>Elakin</b><span>v1.1</span><span class="spacer" style="border:0;flex:1"></span><button class="copyinline" aria-label="Copy all results as text, to paste into an AI chat" title="Copy all results as text, to paste into an AI chat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div>
   <h1>Train a tiny language model on your own text, and watch every step.</h1>
   <p>Large language models are built from the same pieces you’ll see here: tokens, embeddings, attention and a training loop that nudges millions of numbers. This one has <span id="heroParams">about twelve thousand</span> of them, small enough to look at.</p>
   <p style="font-size:16px;margin-top:12px">The name comes from <span style="font-family:var(--mono)">e, l, a, k, i, n</span>: the first six letters Turkish children learn to read. The Turkish sample text uses only those letters.</p>
@@ -347,7 +347,7 @@ footer.foot p{margin:0 0 6px}
   </div>
 </section>
 <footer class="foot">
-  <p><b>Elakin</b> v1.0 · by Şenol Gülgönül · <a href="https://github.com/senolgulgonul/elakin">Source on GitHub</a> · MIT License</p>
+  <p><b>Elakin</b> v1.1 · by Şenol Gülgönül · <a href="https://github.com/senolgulgonul/elakin">Source on GitHub</a> · MIT License</p>
   <p>The Turkish sample text was written for this page, following the letter order of Turkish sound-based reading instruction. Everything runs in your browser; your text is never uploaded.</p>
 </footer>
 </main>
@@ -588,16 +588,12 @@ footer.foot p{margin:0 0 6px}
 })(this);
 </script><script>
 const SAMPLES = {
-  tr: { text: `EL ELE
-
-Ela ile Ali el ele.
+  tr: { text: `Ela ile Ali el ele.
 Lale ile Nil el ele.
 Ela, Ali, Lale, Nil el ele.
 Kenan ile Nalan el ele.
 Anne ile nine el ele.
 El ele, el ele. Aile el ele.
-
-KEK
 
 Ela, kek al. Ali, kek al.
 Anne iki kek al.
@@ -608,8 +604,6 @@ Nalan naneli kek al.
 Ela, ilk keki al. Ali, iki keki al.
 Kenan, kek al. Kenan iki kek al.
 
-LALE
-
 Lale, lale al.
 Ela iki lale al.
 Nine lale ek. Anne lale ek.
@@ -617,15 +611,11 @@ Ali, lale ek. Nil, lale ek.
 Lale ne? Lale, lale.
 Nalan lale al, nine lale ek.
 
-NANE
-
 Nalan nane al.
 Nane ne? Nane, nane.
 Nil, kekine nane ekle.
 Naneli kek, naneli kek.
 Anne naneli kek al.
-
-KALE
 
 Ali kil al. Kaan kil al.
 Kil ile kale. Kale, kale.
@@ -633,29 +623,21 @@ Ali, kale ile kal. Kaan, kale ile kal.
 İki kale, iki kale.
 Kenan kale al, Ali kale al.
 
-KALK
-
 Ela, kalk. Ali, kalk.
 Kalk Kaan, kalk. Kek al.
 Nil, kalk. Nil, ilikle.
 Ali, kalk. Ali, ilikle.
 Kalk, ilikle, kek al.
 
-İNEK
-
 Kenan, inek ile kal.
 Nine inek al. Anne inek al.
 Nine ekin ek. Anne ekin ek.
 Ekin ne? Ekin, ekin.
 
-ELLE
-
 Ela elle kek al.
 Ali elle lale ek.
 Nalan elle kil al.
 Elle, elle! Elle al.
-
-KEKLİK
 
 Keklik! Keklik!
 Kaan, keklik ile kal.
@@ -663,16 +645,12 @@ Keklik kekik ile kal.
 İki keklik, iki keklik.
 Ela keklik ile kal. Ali keklik ile kal.
 
-AİLE
-
 Anne, nine, Ela, Ali. Aile!
 Nine, Ela ile Ali.
 Nine, ninni! Ela ile Ali, ninni!
 Ela, anla. Ali, anla.
 Anne Lale ile Nil al.
 Aile ile kal. Aile el ele.
-
-ELA İLE ALİ
 
 Ela kalk. Ela ilikle.
 Ela iki kek al.
@@ -1204,7 +1182,7 @@ function pct(v) { return (v * 100).toFixed(1) + '%'; }
 function q(c) { return c === ' ' ? '␣(space)' : c === '\n' ? '↵(newline)' : c; }
 function buildReport() {
   const L = [];
-  L.push('These are results from Elakin (elakin v1.0), a web page that trains a small character-level Transformer in the browser. Please explain them to me: what the model learned, what the numbers mean, and anything surprising or worth trying next.');
+  L.push('These are results from Elakin (elakin v1.1), a web page that trains a small character-level Transformer in the browser. Please explain them to me: what the model learned, what the numbers mean, and anything surprising or worth trying next.');
   L.push('');
   let np = 0; for (const k in state.model.p) np += state.model.p[k].length;
   L.push('## Model', `One Transformer block (single attention head + MLP with ReLU, residual connections, no layer norm). Character-level tokens. Context ${CFG.T} characters, embedding size ${CFG.d}, MLP size ${CFG.f}, ${fmt(np)} parameters. Adam optimiser, learning rate ${$('lr').value}, batches of ${CFG.B} random windows.`, '');
