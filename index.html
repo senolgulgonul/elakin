@@ -185,7 +185,7 @@ footer.foot p{margin:0 0 6px}
 <body>
 <div class="layout">
 <nav class="rail" aria-label="Steps">
-  <h2>Elakin <span style="font-family:var(--mono);font-size:12px;color:var(--muted);font-weight:400">v1.3</span></h2>
+  <h2>Elakin <span style="font-family:var(--mono);font-size:12px;color:var(--muted);font-weight:400">v1.4</span></h2>
   <ol id="railList">
     <li><a href="#s-text"><span class="n">1</span>Your text</a></li>
     <li><a href="#s-tokens"><span class="n">2</span>Tokens</a></li>
@@ -201,7 +201,7 @@ footer.foot p{margin:0 0 6px}
 
 <main>
 <header class="hero">
-  <div class="brand"><b>Elakin</b><span>v1.3</span><span class="spacer" style="border:0;flex:1"></span><div class="seg lang" id="langSeg"><button aria-pressed="true" data-l="en">EN</button><button aria-pressed="false" data-l="tr">TR</button></div></div>
+  <div class="brand"><b>Elakin</b><span>v1.4</span><span class="spacer" style="border:0;flex:1"></span><div class="seg lang" id="langSeg"><button aria-pressed="true" data-l="en">EN</button><button aria-pressed="false" data-l="tr">TR</button></div></div>
   <h1>Train a tiny language model on your own text, and watch every step.</h1>
   <p>Large language models are built from the same pieces you’ll see here: tokens, embeddings, attention and a training loop that nudges millions of numbers. This one has <span id="heroParams">about twelve thousand</span> of them, small enough to look at.</p>
   <p style="font-size:16px;margin-top:12px">The name comes from <span style="font-family:var(--mono)">e, l, a, k, i, n</span>: the first six letters Turkish children learn to read. The Turkish sample text uses only those letters.</p>
@@ -226,7 +226,7 @@ footer.foot p{margin:0 0 6px}
 
 <section class="step" id="s-tokens">
   <h2><span class="n">2</span>Tokens</h2>
-  <p class="lede">A model can’t read letters. First the text is cut into pieces called tokens. Different models cut differently, and the choice matters: fewer, bigger tokens let a model see more text at once.</p>
+  <p class="lede">A model can’t see text as letters; whatever you give it is first turned into numbers. The first step is to cut the text into pieces called tokens. Different models cut differently, and the choice matters: fewer, bigger tokens let a model see more text at once.</p>
   <label for="focus" class="msg">Text to inspect. Steps 3 to 7 use its first 24 characters.</label>
   <input type="text" id="focus" style="margin:6px 0 16px">
   <div class="panel">
@@ -326,7 +326,7 @@ footer.foot p{margin:0 0 6px}
 
 <section class="step" id="s-learned">
   <h2><span class="n">7</span>What attention learned</h2>
-  <p class="lede">The same sentence, before and after training. Look for structure: a bright diagonal just left of the main one means “look at the previous character”, which is how the model learns that <span style="font-family:var(--mono)">q</span> is followed by <span style="font-family:var(--mono)">u</span><span data-i18n="tail-qu">.</span></p>
+  <p class="lede">The same sentence, before and after training. Look for structure: a bright diagonal just left of the main one means “look at the previous character”, which is how the model learns which letters tend to follow which.</p>
   <p class="msg">This model has one layer and one attention head, so expect it to look mostly at nearby characters. But also look for rows that reach back to the start of a word or a sentence: that is how it tells a name from the middle of a word. Large models have dozens of layers and heads, and build much longer-range connections.</p>
   <div class="two">
     <div class="panel"><h3>Before training</h3><div class="scroll"><div class="heat" id="heatBefore"></div></div></div>
@@ -358,7 +358,7 @@ footer.foot p{margin:0 0 6px}
   </div>
 </section>
 <footer class="foot">
-  <p><b>Elakin</b> v1.3 · by Şenol Gülgönül · <a href="https://github.com/senolgulgonul/elakin">Source on GitHub</a> · MIT License</p>
+  <p><b>Elakin</b> v1.4 · by Şenol Gülgönül · <a href="https://github.com/senolgulgonul/elakin">Source on GitHub</a> · MIT License</p>
   <p>The Turkish sample text uses only the letters e, l, a, k, i, n and every sentence appears once: in our experiments, that kind of text taught the model best (see <a href="https://github.com/senolgulgonul/elakin/tree/main/experiments">experiments</a>). Everything runs in your browser; your text is never uploaded.</p>
 </footer>
 </main>
@@ -619,7 +619,7 @@ const I18N = {
   'Turkish primer (e l a k i n)': 'Türkçe ilk okuma (e l a k i n)',
   'English story': 'İngilizce hikâye',
   'Lowercase everything': 'Hepsini küçük harfe çevir',
-  'A model can’t read letters. First the text is cut into pieces called tokens. Different models cut differently, and the choice matters: fewer, bigger tokens let a model see more text at once.': 'Model harf okuyamaz. Önce metin, token denen parçalara bölünür. Farklı modeller farklı böler ve bu seçim önemlidir: daha az ve daha büyük token, modelin bir seferde daha fazla metin görmesini sağlar.',
+  'A model can’t see text as letters; whatever you give it is first turned into numbers. The first step is to cut the text into pieces called tokens. Different models cut differently, and the choice matters: fewer, bigger tokens let a model see more text at once.': 'Model metni harf olarak göremez; ne verirseniz verin önce sayıya çevrilir. İlk adım, metni token denen parçalara bölmektir. Farklı modeller farklı böler ve bu seçim önemlidir: daha az ve daha büyük token, modelin bir seferde daha fazla metin görmesini sağlar.',
   'Text to inspect. Steps 3 to 7 use its first 24 characters.': 'İncelenecek metin. 3–7. adımlar ilk 24 karakterini kullanır.',
   'Characters (this model)': 'Karakterler (bu model)',
   'BPE trained on your text': 'Metninizle eğitilen BPE',
@@ -658,9 +658,7 @@ const I18N = {
   'What the model writes as it learns': 'Model öğrenirken ne yazıyor',
   'Start training to see samples.': 'Örnekleri görmek için eğitimi başlatın.',
   'What attention learned': 'Attention ne öğrendi',
-  'The same sentence, before and after training. Look for structure: a bright diagonal just left of the main one means “look at the previous character”, which is how the model learns that': 'Aynı cümle, eğitimden önce ve sonra. Yapıya bakın: ana köşegenin hemen solundaki parlak bir köşegen “bir önceki karaktere bak” demektir; modelin',
-  'is followed by': 'harfinden sonra',
-  'tail-qu': ' geldiğini öğrenmesi böyle olur.',
+  'The same sentence, before and after training. Look for structure: a bright diagonal just left of the main one means “look at the previous character”, which is how the model learns which letters tend to follow which.': 'Aynı cümle, eğitimden önce ve sonra. Yapıya bakın: ana köşegenin hemen solundaki parlak bir köşegen “bir önceki karaktere bak” demektir; model hangi harften sonra hangisinin geldiğini böyle öğrenir.',
   'This model has one layer and one attention head, so expect it to look mostly at nearby characters. But also look for rows that reach back to the start of a word or a sentence: that is how it tells a name from the middle of a word. Large models have dozens of layers and heads, and build much longer-range connections.': 'Bu modelin tek katmanı ve tek attention başlığı var; bu yüzden çoğunlukla yakın karakterlere bakmasını bekleyin. Ama bir kelimenin ya da cümlenin başına uzanan satırları da arayın: bir ismi kelimenin ortasından böyle ayırt ediyor. Büyük modellerde onlarca katman ve başlık vardır ve çok daha uzak bağlantılar kurarlar.',
   'Before training': 'Eğitimden önce',
   'Now': 'Şimdi',
@@ -1470,7 +1468,7 @@ function pct(v) { return (v * 100).toFixed(1) + '%'; }
 function q(c) { return c === ' ' ? '␣(space)' : c === '\n' ? '↵(newline)' : c; }
 function buildReport() {
   const L = [];
-  L.push('These are results from Elakin (elakin v1.3), a web page that trains a small character-level Transformer in the browser. Please explain them to me: what the model learned, what the numbers mean, and anything surprising or worth trying next.');
+  L.push('These are results from Elakin (elakin v1.4), a web page that trains a small character-level Transformer in the browser. Please explain them to me: what the model learned, what the numbers mean, and anything surprising or worth trying next.');
   L.push('');
   let np = 0; for (const k in state.model.p) np += state.model.p[k].length;
   L.push('## Model', `One Transformer block (single attention head + MLP with ReLU, residual connections, no layer norm). Character-level tokens. Context ${CFG.T} characters, embedding size ${CFG.d}, MLP size ${CFG.f}, ${fmt(np)} parameters. Adam optimiser, learning rate ${$('lr').value}, batches of ${CFG.B} random windows.`, '');
